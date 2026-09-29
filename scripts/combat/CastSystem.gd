@@ -4,6 +4,8 @@
 class_name CastSystem
 extends Node
 
+const SpellVFX = preload("res://scripts/combat/SpellVFX.gd")
+
 # ---------------------------------------------------------------------------
 # Signals
 # ---------------------------------------------------------------------------
@@ -275,6 +277,12 @@ func _resolve_hit(spell, caster: Node, target: Node) -> void:
 			if target.has_method("receive_damage"):
 				target.receive_damage(spell.base_damage)
 			hit_landed.emit(target, spell.id, spell.base_damage, 0.0)
+
+			# Visual FX
+			if is_inside_tree():
+				SpellVFX.spawn_hit_effect(get_tree(), target.global_position, spell.school)
+				if spell.id == 2: # Frost Nova
+					SpellVFX.spawn_frost_ring(get_tree(), caster.global_position, 8.0)
 		else:
 			push_warning("CastSystem: Damage nullified — target in i-frames")
 

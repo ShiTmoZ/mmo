@@ -17,8 +17,13 @@ extends CharacterBody3D
 @onready var _cast_system: CastSystem        = $CastSystem
 @onready var _model_root: Node3D             = $ModelRoot
 @onready var _camera_pivot: Node3D           = $CameraPivot
-@onready var _camera: Camera3D               = $CameraPivot/Camera3D
+@onready var _spring_arm: SpringArm3D         = $CameraPivot/SpringArm3D if has_node("CameraPivot/SpringArm3D") else null
+@onready var _camera: Camera3D               = $CameraPivot/SpringArm3D/Camera3D if has_node("CameraPivot/SpringArm3D/Camera3D") else $CameraPivot/Camera3D
 @onready var _sync_node: MultiplayerSynchronizer = $MultiplayerSynchronizer
+
+var _is_orbiting: bool = false
+var _camera_yaw: float = 0.0
+var _camera_pitch: float = -0.42
 
 # ---------------------------------------------------------------------------
 # Exported action bar config (3 spell slots)
@@ -97,6 +102,29 @@ func _ready() -> void:
 	_cast_system.cast_interrupted.connect(_on_cast_interrupted)
 	_cast_system.cast_cancelled.connect(_on_cast_cancelled)
 
+	_remote_target_pos = global_position
+	_remote_target_rot = rotation.y
+
+	# If training dummy, set wood/burlap color and crimson visor
+	if name.begins_with("Training_Dummy"):
+		var visor = get_node_or_null("ModelRoot/Helmet/Visor")
+		if visor and visor is MeshInstance3D:
+			var mat = StandardMaterial3D.new()
+			mat.albedo_color = Color(1.0, 0.2, 0.2, 1.0)
+			mat.emission_enabled = true
+			mat.emission = Color(1.0, 0.2, 0.2, 1.0)
+			mat.emission_energy_multiplier = 3.0
+			visor.set_surface_override_material(0, mat)
+		var torso = get_node_or_null("ModelRoot/Torso")
+		if torso and torso is MeshInstance3D:
+			var dummy_mat = StandardMaterial3D.new()
+			dummy_mat.albedo_color = Color(0.45, 0.35, 0.22, 1.0)
+			dummy_mat.roughness = 0.9
+			torso.set_surface_override_material(0, dummy_mat)
+		var sword = get_node_or_null("ModelRoot/Greatsword")
+		if sword:
+			sword.hide()
+
 	# Auto-detect local player on spawn
 	if multiplayer.has_multiplayer_peer():
 		var my_id: int = multiplayer.get_unique_id()
@@ -119,8 +147,8 @@ func init_as_local_player(peer_id: int, team_id: int) -> void:
 
 	if _camera_pivot:
 		_camera_pivot.top_level = true
-		_camera_pivot.global_position = global_position + Vector3(0.0, 10.0, 12.0)
-		_camera_pivot.look_at(global_position + Vector3(0.0, 1.0, 0.0), Vector3.UP)
+		_camera_pivot.global_position = global_position + Vector3(0.0, 1.7, 0.0)
+		_camera_pivot.rotation = Vector3(_camera_pitch, _camera_yaw, 0.0)
 
 	if _camera:
 		_camera.current = true
@@ -145,11 +173,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not _is_local_player:
 		return
 
-	# Target selection — left click
+	# Mouse look & target selection
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
+		if mb.button_index == MOUSE_BUTTON_RIGHT:
+			_is_orbiting = mb.pressed
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if mb.pressed else Input.MOUSE_MODE_VISIBLE
+		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
 			_try_click_select_target()
+
+	if event is InputEventMouseMotion and _is_orbiting:
+		var mm: InputEventMouseMotion = event as InputEventMouseMotion
+		_camera_yaw -= mm.relative.x * 0.005
+		_camera_pitch = clampf(_camera_pitch - mm.relative.y * 0.005, -1.2, 0.3)
 
 	# Spell slots
 	if event.is_action_pressed("cast_slot_1"):
@@ -244,13 +280,12 @@ func _apply_movement(delta: float) -> void:
 	right   = right.normalized()
 
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
-	_move_dir = (fwd * -input_dir.y + right * input_dir.x).normalized()
-
-	if _move_dir.length_squared() > 0.01:
+	if input_dir.length_squared() > 0.01:
+		_move_dir = (fwd * -input_dir.y + right * input_dir.x).normalized()
 		current_state = GameData.PlayerState.MOVING
-		# Face movement direction
 		rotation.y = lerp_angle(rotation.y, atan2(-_move_dir.x, -_move_dir.z), 0.2)
 	else:
+		_move_dir = Vector3.ZERO
 		if current_state == GameData.PlayerState.MOVING:
 			current_state = GameData.PlayerState.IDLE
 
@@ -525,7 +560,7 @@ func _die() -> void:
 func _process(delta: float) -> void:
 	if not _is_local_player or _camera_pivot == null:
 		return
-	# Isometric-style chase camera: offset above and behind
-	var target_pos: Vector3 = global_position + Vector3(0.0, 10.0, 12.0)
-	_camera_pivot.global_position = _camera_pivot.global_position.lerp(target_pos, clampf(delta * 10.0, 0.0, 1.0))
-	_camera_pivot.look_at(global_position + Vector3(0.0, 1.0, 0.0), Vector3.UP)
+	# Smoothly track player position and apply yaw/pitch rotation
+	var target_pos: Vector3 = global_position + Vector3(0.0, 1.7, 0.0)
+	_camera_pivot.global_position = _camera_pivot.global_position.lerp(target_pos, clampf(delta * 25.0, 0.0, 1.0))
+	_camera_pivot.rotation = Vector3(_camera_pitch, _camera_yaw, 0.0)

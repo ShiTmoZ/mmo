@@ -107,10 +107,10 @@ func get_spell(spell_id: int) -> SpellData:
 # ---------------------------------------------------------------------------
 # Global constants
 # ---------------------------------------------------------------------------
-const ARENA_RADIUS: float         = 15.0
-const ARENA_BOUNDARY: float       = 14.5
-const SPAWN_TEAM_1: Vector3       = Vector3(-12.0, 1.0, 0.0)
-const SPAWN_TEAM_2: Vector3       = Vector3(12.0,  1.0, 0.0)
+const ARENA_RADIUS: float         = 36.0
+const ARENA_BOUNDARY: float       = 35.0
+const SPAWN_TEAM_1: Vector3       = Vector3(-18.0, 1.0, 0.0)
+const SPAWN_TEAM_2: Vector3       = Vector3(18.0,  1.0, 0.0)
 const MAX_HEALTH: float           = 1000.0
 const MAX_MANA: float             = 600.0
 const MAX_STAMINA: float          = 100.0

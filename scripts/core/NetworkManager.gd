@@ -116,8 +116,8 @@ func _load_arena_solo() -> void:
 	var spawn_pos: Vector3 = GameData.SPAWN_TEAM_1
 	_spawn_player_node(1, spawn_pos, GameData.Team.TEAM_1, "Champion")
 
-	# Spawn training dummy on Team 2
-	var dummy_pos: Vector3 = GameData.SPAWN_TEAM_2
+	# Spawn training dummy 12m in front of player for solo practice
+	var dummy_pos: Vector3 = Vector3(-6.0, 1.0, 0.0)
 	_spawn_training_dummy(dummy_pos, GameData.Team.TEAM_2)
 
 func _spawn_training_dummy(spawn_pos: Vector3, dummy_team: int) -> void:
