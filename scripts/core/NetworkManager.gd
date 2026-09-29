@@ -41,6 +41,9 @@ func _ready() -> void:
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 
+	if DisplayServer.get_name() == "headless" or "--server" in OS.get_cmdline_args():
+		call_deferred("start_dedicated_server")
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -53,6 +56,14 @@ func create_server() -> void:
 	_register_player(1, "Host", GameData.Team.TEAM_1)
 	server_created.emit()
 	print("NetworkManager: Server started on port %d" % GameData.NETWORK_PORT)
+
+func start_dedicated_server() -> void:
+	var err: int = _peer.create_server(GameData.NETWORK_PORT, GameData.MAX_PLAYERS)
+	if err != OK:
+		push_error("NetworkManager: Dedicated server failed to start on port %d, error %d" % [GameData.NETWORK_PORT, err])
+		return
+	multiplayer.multiplayer_peer = _peer
+	print("NetworkManager: Dedicated server running on UDP %d (Max: %d players)" % [GameData.NETWORK_PORT, GameData.MAX_PLAYERS])
 
 func join_server(address: String) -> void:
 	var err: int = _peer.create_client(address, GameData.NETWORK_PORT)
@@ -82,6 +93,13 @@ func request_start_arena() -> void:
 	if not multiplayer.is_server():
 		return
 	_load_arena.rpc()
+
+@rpc("any_peer", "call_local", "reliable")
+func request_client_start_arena() -> void:
+	if not multiplayer.is_server():
+		return
+	print("NetworkManager: Start arena requested by remote peer %d" % multiplayer.get_remote_sender_id())
+	request_start_arena()
 
 func get_local_team() -> int:
 	var pid: int = multiplayer.get_unique_id()

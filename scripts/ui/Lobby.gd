@@ -2,6 +2,8 @@
 ## Lobby controller: host or join, display live player count, and launch arena.
 extends Control
 
+const DEFAULT_SERVER_IP: String = "206.1.97.56"
+
 @onready var _host_btn: Button       = $VBoxContainer/HostButton
 @onready var _join_btn: Button       = $VBoxContainer/JoinButton
 @onready var _address_field: LineEdit = $VBoxContainer/AddressField
@@ -13,7 +15,7 @@ func _ready() -> void:
 	_join_btn.pressed.connect(_on_join_pressed)
 	_start_btn.pressed.connect(_on_start_pressed)
 	_start_btn.disabled = true
-	_status_label.text = "Enter server address or host a new game."
+	_status_label.text = "Click JOIN GAME to connect to server, or HOST to host locally."
 
 	NetworkManager.server_created.connect(_on_server_created)
 	NetworkManager.joined_server.connect(_on_joined_server)
@@ -25,13 +27,13 @@ func _on_host_pressed() -> void:
 	_host_btn.disabled = true
 	_join_btn.disabled = true
 	_address_field.editable = false
-	_status_label.text = "Starting server on port 7777..."
+	_status_label.text = "Starting local server on port 7777..."
 	NetworkManager.create_server()
 
 func _on_join_pressed() -> void:
 	var address: String = _address_field.text.strip_edges()
 	if address.is_empty():
-		address = "127.0.0.1"
+		address = DEFAULT_SERVER_IP
 	_host_btn.disabled = true
 	_join_btn.disabled = true
 	_address_field.editable = false
@@ -41,14 +43,17 @@ func _on_join_pressed() -> void:
 func _on_start_pressed() -> void:
 	_start_btn.disabled = true
 	_status_label.text = "Starting arena for all players..."
-	NetworkManager.request_start_arena()
+	if multiplayer.is_server():
+		NetworkManager.request_start_arena()
+	else:
+		NetworkManager.request_client_start_arena.rpc_id(1)
 
 func _on_server_created() -> void:
 	_update_host_status(NetworkManager.get_player_count())
 
 func _on_joined_server() -> void:
-	_status_label.text = "Connected to host!\nWaiting for host to start arena..."
-	_start_btn.disabled = true
+	_start_btn.disabled = false
+	_status_label.text = "Connected to server!\nClick [START ARENA] when ready."
 
 func _on_connection_failed() -> void:
 	_host_btn.disabled = false
@@ -60,7 +65,8 @@ func _on_player_count_changed(count: int) -> void:
 	if multiplayer.is_server():
 		_update_host_status(count)
 	else:
-		_status_label.text = "Connected to host!\nPlayers in lobby: %d / %d\nWaiting for host to start..." % [
+		_start_btn.disabled = false
+		_status_label.text = "Connected to server!\nPlayers in lobby: %d / %d\nClick [START ARENA] to start match!" % [
 			count, GameData.MAX_PLAYERS
 		]
 

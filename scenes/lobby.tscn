@@ -56,7 +56,7 @@ theme_override_constants/separation = 14
 
 [node name="AddressField" type="LineEdit" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 40)
-placeholder_text = "Server IP (default: 127.0.0.1)"
+placeholder_text = "Server IP (default: 206.1.97.56)"
 theme_override_font_sizes/font_size = 16
 
 [node name="HostButton" type="Button" parent="VBoxContainer"]
