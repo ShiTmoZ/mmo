@@ -27,9 +27,9 @@ jobs:
 
           # Download and Setup Export Templates
           wget -q https://github.com/godotengine/godot/releases/download/${RELEASE_NAME}/Godot_v${RELEASE_NAME}_export_templates.tpz
-          mkdir -p ~/.local/share/godot/export_templates/${RELEASE_NAME}
+          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
           unzip -q Godot_v${RELEASE_NAME}_export_templates.tpz
-          mv templates/* ~/.local/share/godot/export_templates/${RELEASE_NAME}/
+          mv templates/* ~/.local/share/godot/export_templates/4.3.stable/
 
       - name: Export Windows Desktop (.exe)
         run: |
