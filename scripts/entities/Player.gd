@@ -23,7 +23,8 @@ extends CharacterBody3D
 
 var _is_orbiting: bool = false
 var _camera_yaw: float = 0.0
-var _camera_pitch: float = -0.42
+var _camera_pitch: float = -0.30
+var _anim_player: AnimationPlayer = null
 
 # ---------------------------------------------------------------------------
 # Exported action bar config (3 spell slots)
@@ -105,25 +106,28 @@ func _ready() -> void:
 	_remote_target_pos = global_position
 	_remote_target_rot = rotation.y
 
-	# If training dummy, set wood/burlap color and crimson visor
-	if name.begins_with("Training_Dummy"):
-		var visor = get_node_or_null("ModelRoot/Helmet/Visor")
-		if visor and visor is MeshInstance3D:
-			var mat = StandardMaterial3D.new()
-			mat.albedo_color = Color(1.0, 0.2, 0.2, 1.0)
-			mat.emission_enabled = true
-			mat.emission = Color(1.0, 0.2, 0.2, 1.0)
-			mat.emission_energy_multiplier = 3.0
-			visor.set_surface_override_material(0, mat)
-		var torso = get_node_or_null("ModelRoot/Torso")
-		if torso and torso is MeshInstance3D:
-			var dummy_mat = StandardMaterial3D.new()
-			dummy_mat.albedo_color = Color(0.45, 0.35, 0.22, 1.0)
-			dummy_mat.roughness = 0.9
-			torso.set_surface_override_material(0, dummy_mat)
-		var sword = get_node_or_null("ModelRoot/Greatsword")
-		if sword:
-			sword.hide()
+	# Setup model and animations based on team / dummy
+	if team == GameData.Team.TEAM_2 or name.begins_with("Training_Dummy"):
+		var knight_node: Node = get_node_or_null("ModelRoot/Knight")
+		if knight_node:
+			knight_node.visible = false
+		var mage_node: Node = get_node_or_null("ModelRoot/Mage")
+		if mage_node:
+			mage_node.visible = true
+			_anim_player = mage_node.get_node_or_null("AnimationPlayer")
+			_setup_mage_weapons(mage_node)
+	else:
+		var mage_node: Node = get_node_or_null("ModelRoot/Mage")
+		if mage_node:
+			mage_node.visible = false
+		var knight_node: Node = get_node_or_null("ModelRoot/Knight")
+		if knight_node:
+			knight_node.visible = true
+			_anim_player = knight_node.get_node_or_null("AnimationPlayer")
+			_setup_knight_weapons(knight_node)
+
+	if _anim_player:
+		_anim_player.play("Idle")
 
 	# Auto-detect local player on spawn
 	if multiplayer.has_multiplayer_peer():
@@ -181,6 +185,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if mb.pressed else Input.MOUSE_MODE_VISIBLE
 		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
 			_try_click_select_target()
+		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
+			if _spring_arm:
+				_spring_arm.spring_length = clampf(_spring_arm.spring_length - 0.5, 2.5, 12.0)
+		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
+			if _spring_arm:
+				_spring_arm.spring_length = clampf(_spring_arm.spring_length + 0.5, 2.5, 12.0)
 
 	if event is InputEventMouseMotion and _is_orbiting:
 		var mm: InputEventMouseMotion = event as InputEventMouseMotion
@@ -204,6 +214,48 @@ func _physics_process(delta: float) -> void:
 		_process_local(delta)
 	else:
 		_process_remote(delta)
+	_update_animation()
+
+func _update_animation() -> void:
+	if not _anim_player:
+		return
+	match current_state:
+		GameData.PlayerState.IDLE:
+			if _anim_player.current_animation != "Idle":
+				_anim_player.play("Idle", 0.15)
+		GameData.PlayerState.MOVING:
+			if _anim_player.current_animation != "Running_A":
+				_anim_player.play("Running_A", 0.15)
+		GameData.PlayerState.DODGE_ROLLING:
+			if _anim_player.current_animation != "Dodge_Forward":
+				_anim_player.play("Dodge_Forward", 0.08)
+		GameData.PlayerState.CASTING:
+			if _anim_player.current_animation != "Spellcasting":
+				_anim_player.play("Spellcasting", 0.12)
+		GameData.PlayerState.STUNNED:
+			if _anim_player.current_animation != "Hit_A":
+				_anim_player.play("Hit_A", 0.08)
+		GameData.PlayerState.DEAD:
+			if _anim_player.current_animation != "Death_A":
+				_anim_player.play("Death_A", 0.1)
+
+func _setup_knight_weapons(knight_node: Node) -> void:
+	var skel: Node = knight_node.get_node_or_null("Rig/Skeleton3D")
+	if not skel:
+		return
+	for c in skel.get_children():
+		if "Shield" in c.name and c.name != "Round_Shield":
+			c.visible = false
+		if "Sword" in c.name and c.name != "1H_Sword":
+			c.visible = false
+
+func _setup_mage_weapons(mage_node: Node) -> void:
+	var skel: Node = mage_node.get_node_or_null("Rig/Skeleton3D")
+	if not skel:
+		return
+	for c in skel.get_children():
+		if c.name == "1H_Wand" or c.name == "Spellbook_open":
+			c.visible = false
 
 func _process_local(delta: float) -> void:
 	# Regen

@@ -1,72 +1,18 @@
-[gd_scene load_steps=22 format=3 uid="uid://player_scene"]
+[gd_scene load_steps=8 format=3 uid="uid://player_scene"]
 
 [ext_resource type="Script" path="res://scripts/entities/Player.gd" id="1_player"]
-[ext_resource type="Script" path="res://scripts/combat/CastSystem.gd" id="2_cast"]
+[ext_resource type="Script" path="res://scripts/combat/CastSystem.gd" id="2_cast_system"]
+[ext_resource type="PackedScene" path="res://assets/models/Knight.glb" id="3_knight_model"]
+[ext_resource type="PackedScene" path="res://assets/models/Mage.glb" id="4_mage_model"]
 
-[sub_resource type="CapsuleShape3D" id="1_capsule"]
+[sub_resource type="CapsuleShape3D" id="1_col_shape"]
 radius = 0.45
 height = 1.9
 
-[sub_resource type="SphereShape3D" id="spring_sphere"]
+[sub_resource type="SphereShape3D" id="sphere_shape"]
 radius = 0.25
 
-[sub_resource type="StandardMaterial3D" id="mat_armor"]
-albedo_color = Color(0.18, 0.2, 0.24, 1)
-metallic = 0.9
-roughness = 0.25
-
-[sub_resource type="CapsuleMesh" id="mesh_torso"]
-radius = 0.35
-height = 1.0
-
-[sub_resource type="StandardMaterial3D" id="mat_gold"]
-albedo_color = Color(0.85, 0.65, 0.2, 1)
-metallic = 0.95
-roughness = 0.2
-
-[sub_resource type="BoxMesh" id="mesh_pauldron"]
-size = Vector3(0.28, 0.2, 0.35)
-
-[sub_resource type="StandardMaterial3D" id="mat_helm"]
-albedo_color = Color(0.12, 0.13, 0.16, 1)
-metallic = 0.95
-roughness = 0.2
-
-[sub_resource type="CylinderMesh" id="mesh_helm"]
-top_radius = 0.24
-bottom_radius = 0.26
-height = 0.42
-
-[sub_resource type="StandardMaterial3D" id="mat_visor"]
-albedo_color = Color(0.2, 0.8, 1.0, 1)
-emission_enabled = true
-emission = Color(0.2, 0.85, 1.0, 1)
-emission_energy_multiplier = 4.0
-
-[sub_resource type="BoxMesh" id="mesh_visor"]
-size = Vector3(0.26, 0.05, 0.08)
-
-[sub_resource type="StandardMaterial3D" id="mat_blade"]
-albedo_color = Color(0.9, 0.92, 0.95, 1)
-metallic = 0.98
-roughness = 0.15
-
-[sub_resource type="BoxMesh" id="mesh_blade"]
-size = Vector3(0.08, 1.3, 0.04)
-
-[sub_resource type="StandardMaterial3D" id="mat_cape"]
-albedo_color = Color(0.1, 0.08, 0.12, 1)
-roughness = 0.95
-cull_mode = 2
-
-[sub_resource type="BoxMesh" id="mesh_cape"]
-size = Vector3(0.65, 1.1, 0.04)
-
-[sub_resource type="StandardMaterial3D" id="mat_dummy"]
-albedo_color = Color(0.45, 0.35, 0.22, 1)
-roughness = 0.9
-
-[sub_resource type="SceneReplicationConfig" id="4_rep_config"]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_8uv8l"]
 properties/0/path = NodePath(".:sync_position")
 properties/0/spawn = true
 properties/0/replication_mode = 1
@@ -76,24 +22,9 @@ properties/1/replication_mode = 1
 properties/2/path = NodePath(".:sync_state")
 properties/2/spawn = true
 properties/2/replication_mode = 1
-properties/3/path = NodePath(".:current_health")
+properties/3/path = NodePath(".:team")
 properties/3/spawn = true
 properties/3/replication_mode = 1
-properties/4/path = NodePath(".:current_mana")
-properties/4/spawn = true
-properties/4/replication_mode = 1
-properties/5/path = NodePath(".:current_stamina")
-properties/5/spawn = true
-properties/5/replication_mode = 1
-properties/6/path = NodePath(".:current_stagger")
-properties/6/spawn = true
-properties/6/replication_mode = 1
-properties/7/path = NodePath(".:team")
-properties/7/spawn = true
-properties/7/replication_mode = 1
-properties/8/path = NodePath(".:display_name")
-properties/8/spawn = true
-properties/8/replication_mode = 1
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
@@ -102,63 +33,33 @@ script = ExtResource("1_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
-shape = SubResource("1_capsule")
+shape = SubResource("1_col_shape")
 
 [node name="ModelRoot" type="Node3D" parent="."]
 
-[node name="Torso" type="MeshInstance3D" parent="ModelRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
-mesh = SubResource("mesh_torso")
-surface_material_override/0 = SubResource("mat_armor")
+[node name="Knight" parent="ModelRoot" instance=ExtResource("3_knight_model")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
-[node name="Helmet" type="MeshInstance3D" parent="ModelRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
-mesh = SubResource("mesh_helm")
-surface_material_override/0 = SubResource("mat_helm")
-
-[node name="Visor" type="MeshInstance3D" parent="ModelRoot/Helmet"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, -0.22)
-mesh = SubResource("mesh_visor")
-surface_material_override/0 = SubResource("mat_visor")
-
-[node name="Pauldron_L" type="MeshInstance3D" parent="ModelRoot"]
-transform = Transform3D(0.965926, -0.258819, 0, 0.258819, 0.965926, 0, 0, 0, 1, -0.42, 1.32, 0)
-mesh = SubResource("mesh_pauldron")
-surface_material_override/0 = SubResource("mat_gold")
-
-[node name="Pauldron_R" type="MeshInstance3D" parent="ModelRoot"]
-transform = Transform3D(0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0, 0, 1, 0.42, 1.32, 0)
-mesh = SubResource("mesh_pauldron")
-surface_material_override/0 = SubResource("mat_gold")
-
-[node name="Cape" type="MeshInstance3D" parent="ModelRoot"]
-transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 0.85, 0.25)
-mesh = SubResource("mesh_cape")
-surface_material_override/0 = SubResource("mat_cape")
-
-[node name="Greatsword" type="MeshInstance3D" parent="ModelRoot"]
-transform = Transform3D(0.939693, 0, 0.34202, 0.17101, 0.866025, -0.469846, -0.296198, 0.5, 0.813798, 0.2, 0.95, 0.3)
-mesh = SubResource("mesh_blade")
-surface_material_override/0 = SubResource("mat_blade")
+[node name="Mage" parent="ModelRoot" instance=ExtResource("4_mage_model")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+visible = false
 
 [node name="CameraPivot" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 
 [node name="SpringArm3D" type="SpringArm3D" parent="CameraPivot"]
-transform = Transform3D(1, 0, 0, 0, 0.882948, 0.469472, 0, -0.469472, 0.882948, 0, 0, 0)
 collision_mask = 1
-shape = SubResource("spring_sphere")
-spring_length = 7.5
+shape = SubResource("sphere_shape")
+spring_length = 6.0
 
 [node name="Camera3D" type="Camera3D" parent="CameraPivot/SpringArm3D"]
-fov = 60.0
+fov = 65.0
 near = 0.1
 far = 500.0
-current = false
+current = true
 
 [node name="CastSystem" type="Node" parent="."]
-script = ExtResource("2_cast")
+script = ExtResource("2_cast_system")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
-root_path = NodePath("..")
-replication_config = SubResource("4_rep_config")
+replication_config = SubResource("SceneReplicationConfig_8uv8l")
