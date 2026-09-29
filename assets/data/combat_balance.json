@@ -1,0 +1,219 @@
+{
+  "game_title": "Ashen Sanctum",
+  "design_philosophy": "Hardcore souls-like co-op ARPG with tactical Warcraft 3-inspired combat roles and precise execution windows.",
+  "classes": [
+    {
+      "class_id": "templar",
+      "role": "Tank / Control",
+      "base_stats": {
+        "health": 1200,
+        "mana": 200,
+        "stamina": 180,
+        "stamina_regen": 20
+      },
+      "spells": [
+        {
+          "id": "templar_shield_slam",
+          "name": "Bulwark Impact",
+          "cast_time": 0.0,
+          "cooldown": 8.0,
+          "mana_cost": 25,
+          "stamina_cost": 40,
+          "base_value": 180,
+          "causes_interrupt": true,
+          "interruptible": false,
+          "tactical_role": "High-priority direct interrupt. Generates massive threat (300% multiplier); use instantly when boss starts windup for wipe mechanics."
+        },
+        {
+          "id": "templar_iron_bastion",
+          "name": "Iron Bastion",
+          "cast_time": 0.5,
+          "cooldown": 18.0,
+          "mana_cost": 40,
+          "stamina_cost": 50,
+          "base_value": 0,
+          "causes_interrupt": false,
+          "interruptible": true,
+          "tactical_role": "Mitigation stance granting 65% damage reduction and stability for 5 seconds; essential before soaking unblockable boss cleaves."
+        },
+        {
+          "id": "templar_wrath_brand",
+          "name": "Condemning Brand",
+          "cast_time": 1.0,
+          "cooldown": 12.0,
+          "mana_cost": 50,
+          "stamina_cost": 30,
+          "base_value": 120,
+          "causes_interrupt": false,
+          "interruptible": true,
+          "tactical_role": "AoE taunt that applies a 10% physical/elemental vulnerability debuff for 8 seconds, setting up burst windows for the Spellblade."
+        }
+      ]
+    },
+    {
+      "class_id": "cleric",
+      "role": "Healer / Support",
+      "base_stats": {
+        "health": 750,
+        "mana": 450,
+        "stamina": 100,
+        "stamina_regen": 12
+      },
+      "spells": [
+        {
+          "id": "cleric_soothing_light",
+          "name": "Grace of the Sanctum",
+          "cast_time": 2.5,
+          "cooldown": 0.0,
+          "mana_cost": 75,
+          "stamina_cost": 15,
+          "base_value": 550,
+          "causes_interrupt": false,
+          "interruptible": true,
+          "tactical_role": "High-risk, high-throughput single-target burst heal. Severe cast time punishment requires strict positioning during heavy mechanics."
+        },
+        {
+          "id": "cleric_aegis_mend",
+          "name": "Martyr's Shield",
+          "cast_time": 0.0,
+          "cooldown": 14.0,
+          "mana_cost": 110,
+          "stamina_cost": 35,
+          "base_value": 300,
+          "causes_interrupt": false,
+          "interruptible": false,
+          "tactical_role": "Emergency reaction button. Applies an instant flat damage barrier and prevents poise break on the target for 3 seconds."
+        },
+        {
+          "id": "cleric_hallowed_ground",
+          "name": "Sanctified Zone",
+          "cast_time": 1.8,
+          "cooldown": 30.0,
+          "mana_cost": 160,
+          "stamina_cost": 25,
+          "base_value": 80,
+          "causes_interrupt": false,
+          "interruptible": true,
+          "tactical_role": "Targeted 8-meter AoE field ticking healing for 8 seconds. Restores 5 stamina per second to allies inside, facilitating DPS rotations."
+        }
+      ]
+    },
+    {
+      "class_id": "spellblade",
+      "role": "Burst DPS / Combo Flanker",
+      "base_stats": {
+        "health": 850,
+        "mana": 300,
+        "stamina": 150,
+        "stamina_regen": 25
+      },
+      "spells": [
+        {
+          "id": "spellblade_arcane_thrust",
+          "name": "Rift Thrust",
+          "cast_time": 0.0,
+          "cooldown": 3.0,
+          "mana_cost": 20,
+          "stamina_cost": 25,
+          "base_value": 160,
+          "causes_interrupt": false,
+          "interruptible": false,
+          "tactical_role": "Combo starter. Pierces armor and applies 'Resonance' for 6 seconds. Generates 1 Charge of Arcane Flux."
+        },
+        {
+          "id": "spellblade_frost_flurry",
+          "name": "Glacial Convergence",
+          "cast_time": 1.2,
+          "cooldown": 7.0,
+          "mana_cost": 55,
+          "stamina_cost": 40,
+          "base_value": 380,
+          "causes_interrupt": false,
+          "interruptible": true,
+          "tactical_role": "Combo bridge. Consumes 'Resonance' to deal 50% bonus damage and reduce the target's attack speed by 20% for 4 seconds."
+        },
+        {
+          "id": "spellblade_discharge",
+          "name": "Void Shatter",
+          "cast_time": 0.0,
+          "cooldown": 20.0,
+          "mana_cost": 90,
+          "stamina_cost": 60,
+          "base_value": 750,
+          "causes_interrupt": true,
+          "interruptible": false,
+          "tactical_role": "Finisher and backup interrupt. Consumes all Arcane Flux charges to amplify damage up to 100%. Deals heavy stagger to poise bars."
+        }
+      ]
+    }
+  ],
+  "boss_encounter": {
+    "boss_id": "the_stone_colossus",
+    "name": "The Stone Colossus",
+    "arena_type": "Circular Sealed Chamber (Radius: 30m)",
+    "phases": [
+      {
+        "phase": 1,
+        "hp_range": "100% - 70%",
+        "title": "Slumbering Titan",
+        "description": "Slow, predictable telegraphed physical swings. Tests basic tank positioning, stamina management, and DPS timing around recovery frames."
+      },
+      {
+        "phase": 2,
+        "hp_range": "70% - 30%",
+        "title": "Molten Awakening",
+        "description": "The Colossus vents superheated core energy. Arena hazard rings form. Boss gains increased movement speed and introduces fatal channeled casts."
+      },
+      {
+        "phase": 3,
+        "hp_range": "30% - 0%",
+        "title": "Cataclysmic Collapse",
+        "description": "Soft enrage. Boss continuously radiates pulsing room-wide damage while alternating rapid slams. Demands simultaneous group coordination and burst DPS."
+      }
+    ],
+    "telegraphed_attacks": [
+      {
+        "id": "colossus_tectonic_slam",
+        "name": "Tectonic Cleave",
+        "phase_introduced": 1,
+        "telegraph_duration": 2.2,
+        "dodge_window_timing": {
+          "start": 1.9,
+          "end": 2.2
+        },
+        "area_radius_meters": 12.0,
+        "cone_angle_degrees": 120,
+        "requires_group_interrupt": false,
+        "counterplay": "Templar turns boss away from group. DPS and Healer position behind. Tank must execute an active dodge-roll through the swing or pop Iron Bastion."
+      },
+      {
+        "id": "colossus_overdrive_eruption",
+        "name": "Core Detonation",
+        "phase_introduced": 2,
+        "telegraph_duration": 4.5,
+        "dodge_window_timing": {
+          "start": 4.2,
+          "end": 4.5
+        },
+        "area_radius_meters": 30.0,
+        "cone_angle_degrees": 360,
+        "requires_group_interrupt": true,
+        "counterplay": "Full-arena lethal wipe mechanic. The boss gains a 3-stack Poise Armor shield. Requires 2 interrupts (e.g., Templar Bulwark Impact + Spellblade Void Shatter) within 4.5s to break channel."
+      },
+      {
+        "id": "colossus_earthquake_stomp",
+        "name": "Shattering Quake",
+        "phase_introduced": 3,
+        "telegraph_duration": 1.4,
+        "dodge_window_timing": {
+          "start": 1.1,
+          "end": 1.4
+        },
+        "area_radius_meters": 18.0,
+        "cone_angle_degrees": 360,
+        "requires_group_interrupt": false,
+        "counterplay": "Rapid radial point-blank AoE. Melee characters must quickly roll outward during the 0.3s iframe window; Cleric must pre-cast Sanctified Zone to catch residual shockwave damage."
+      }
+    ]
+  }
+}
