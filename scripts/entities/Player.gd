@@ -81,7 +81,7 @@ var _hud: Node                  = null
 func _ready() -> void:
 	# Set up synchronizer: server is authority for all players,
 	# but local owner does client-side prediction
-	if multiplayer.is_server():
+	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
 		set_process(true)
 		set_physics_process(true)
 	else:
@@ -98,9 +98,10 @@ func _ready() -> void:
 	_cast_system.cast_cancelled.connect(_on_cast_cancelled)
 
 	# Auto-detect local player on spawn
-	var my_id: int = multiplayer.get_unique_id()
-	if name == "Player_%d" % my_id:
-		call_deferred("_setup_as_local_player", my_id)
+	if multiplayer.has_multiplayer_peer():
+		var my_id: int = multiplayer.get_unique_id()
+		if name == "Player_%d" % my_id:
+			call_deferred("_setup_as_local_player", my_id)
 
 func _setup_as_local_player(my_id: int) -> void:
 	init_as_local_player(my_id, team)
@@ -113,6 +114,13 @@ func init_as_local_player(peer_id: int, team_id: int) -> void:
 	team             = team_id
 	set_meta("peer_id", peer_id)
 	set_meta("team", team_id)
+	set_process(true)
+	set_physics_process(true)
+
+	if _camera_pivot:
+		_camera_pivot.top_level = true
+		_camera_pivot.global_position = global_position + Vector3(0.0, 10.0, 12.0)
+		_camera_pivot.look_at(global_position + Vector3(0.0, 1.0, 0.0), Vector3.UP)
 
 	if _camera:
 		_camera.current = true
@@ -406,7 +414,10 @@ func _initiate_cast(spell_id: int) -> void:
 
 	# For instant hits immediately request server validation
 	if spell.cast_time <= 0.0 and target != null:
-		_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
+		if multiplayer.has_multiplayer_peer():
+			_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
+		else:
+			_cast_system.server_validate_hit(get_path(), target.get_path(), spell_id)
 
 func _on_cast_started(spell_id: int, cast_time: float) -> void:
 	current_state = GameData.PlayerState.CASTING
@@ -416,7 +427,10 @@ func _on_cast_started(spell_id: int, cast_time: float) -> void:
 func _on_cast_completed(spell_id: int) -> void:
 	current_state = GameData.PlayerState.IDLE
 	if _current_target != null:
-		_cast_system.server_validate_hit.rpc(get_path(), _current_target.get_path(), spell_id)
+		if multiplayer.has_multiplayer_peer():
+			_cast_system.server_validate_hit.rpc(get_path(), _current_target.get_path(), spell_id)
+		else:
+			_cast_system.server_validate_hit(get_path(), _current_target.get_path(), spell_id)
 	if _hud and _hud.has_method("on_cast_completed"):
 		_hud.on_cast_completed(spell_id)
 
@@ -512,6 +526,6 @@ func _process(delta: float) -> void:
 	if not _is_local_player or _camera_pivot == null:
 		return
 	# Isometric-style chase camera: offset above and behind
-	var target_pos: Vector3 = global_position + Vector3(0.0, 12.0, 10.0)
-	_camera_pivot.global_position = _camera_pivot.global_position.lerp(target_pos, 0.12)
-	_camera_pivot.look_at(global_position, Vector3.UP)
+	var target_pos: Vector3 = global_position + Vector3(0.0, 10.0, 12.0)
+	_camera_pivot.global_position = _camera_pivot.global_position.lerp(target_pos, clampf(delta * 10.0, 0.0, 1.0))
+	_camera_pivot.look_at(global_position + Vector3(0.0, 1.0, 0.0), Vector3.UP)

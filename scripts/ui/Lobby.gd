@@ -78,7 +78,7 @@ func _on_connection_failed() -> void:
 
 func _on_player_count_changed(count: int) -> void:
 	_start_btn.disabled = false
-	if multiplayer.is_server():
+	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
 		_update_host_status(count)
 	else:
 		_status_label.text = "Connected to Server!\nPlayers in lobby: %d / %d\nClick [START MULTIPLAYER ARENA] to begin!" % [

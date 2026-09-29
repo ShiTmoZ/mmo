@@ -8,33 +8,33 @@ extends CanvasLayer
 # Node references — matched to CombatHUD.tscn hierarchy
 # ---------------------------------------------------------------------------
 # Local player vitals
-@onready var _health_bar: ProgressBar        = $VitalsPanel/HealthBar
-@onready var _mana_bar: ProgressBar          = $VitalsPanel/ManaBar
-@onready var _stamina_bar: ProgressBar       = $VitalsPanel/StaminaBar
-@onready var _stagger_bar: ProgressBar       = $VitalsPanel/StaggerBar
-@onready var _player_name_label: Label       = $VitalsPanel/PlayerNameLabel
+@onready var _health_bar: ProgressBar        = $VitalsPanel/VBox/HealthBar
+@onready var _mana_bar: ProgressBar          = $VitalsPanel/VBox/ManaBar
+@onready var _stamina_bar: ProgressBar       = $VitalsPanel/VBox/StaminaBar
+@onready var _stagger_bar: ProgressBar       = $VitalsPanel/VBox/StaggerBar
+@onready var _player_name_label: Label       = $VitalsPanel/VBox/PlayerNameLabel
 
 # Self cast bar
 @onready var _self_cast_panel: PanelContainer    = $SelfCastPanel
-@onready var _self_cast_bar: ProgressBar         = $SelfCastPanel/CastBar
-@onready var _self_cast_spell_label: Label       = $SelfCastPanel/SpellNameLabel
-@onready var _self_cast_interrupt_label: Label   = $SelfCastPanel/InterruptedLabel
+@onready var _self_cast_bar: ProgressBar         = $SelfCastPanel/CastVBox/CastBar
+@onready var _self_cast_spell_label: Label       = $SelfCastPanel/CastVBox/SpellNameLabel
+@onready var _self_cast_interrupt_label: Label   = $SelfCastPanel/CastVBox/InterruptedLabel
 
 # Target frame
 @onready var _target_frame: PanelContainer       = $TargetFrame
-@onready var _target_name_label: Label           = $TargetFrame/TargetNameLabel
-@onready var _target_health_bar: ProgressBar     = $TargetFrame/TargetHealthBar
-@onready var _target_cast_panel: PanelContainer  = $TargetFrame/TargetCastPanel
-@onready var _target_cast_bar: ProgressBar       = $TargetFrame/TargetCastPanel/TargetCastBar
-@onready var _target_cast_label: Label           = $TargetFrame/TargetCastPanel/TargetCastLabel
+@onready var _target_name_label: Label           = $TargetFrame/TargetVBox/TargetNameLabel
+@onready var _target_health_bar: ProgressBar     = $TargetFrame/TargetVBox/TargetHealthBar
+@onready var _target_cast_panel: PanelContainer  = $TargetFrame/TargetVBox/TargetCastPanel
+@onready var _target_cast_bar: ProgressBar       = $TargetFrame/TargetVBox/TargetCastPanel/TCastVBox/TargetCastBar
+@onready var _target_cast_label: Label           = $TargetFrame/TargetVBox/TargetCastPanel/TCastVBox/TargetCastLabel
 
 # Action bar
-@onready var _slot_1_label: Label    = $ActionBar/Slot1/SpellLabel
-@onready var _slot_1_cd: Label       = $ActionBar/Slot1/CooldownLabel
-@onready var _slot_2_label: Label    = $ActionBar/Slot2/SpellLabel
-@onready var _slot_2_cd: Label       = $ActionBar/Slot2/CooldownLabel
-@onready var _slot_3_label: Label    = $ActionBar/Slot3/SpellLabel
-@onready var _slot_3_cd: Label       = $ActionBar/Slot3/CooldownLabel
+@onready var _slot_1_label: Label    = $ActionBar/Slot1/SlotVBox/SpellLabel
+@onready var _slot_1_cd: Label       = $ActionBar/Slot1/SlotVBox/CooldownLabel
+@onready var _slot_2_label: Label    = $ActionBar/Slot2/SlotVBox/SpellLabel
+@onready var _slot_2_cd: Label       = $ActionBar/Slot2/SlotVBox/CooldownLabel
+@onready var _slot_3_label: Label    = $ActionBar/Slot3/SlotVBox/SpellLabel
+@onready var _slot_3_cd: Label       = $ActionBar/Slot3/SlotVBox/CooldownLabel
 
 # Slot overlay panels for greying out on cooldown
 @onready var _slot_1_overlay: ColorRect = $ActionBar/Slot1/CooldownOverlay

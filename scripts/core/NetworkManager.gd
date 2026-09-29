@@ -149,6 +149,8 @@ func request_client_start_arena() -> void:
 	request_start_arena()
 
 func get_local_team() -> int:
+	if not multiplayer.has_multiplayer_peer():
+		return GameData.Team.TEAM_1
 	var pid: int = multiplayer.get_unique_id()
 	var info: Dictionary = _player_data.get(pid, {})
 	return info.get("team", GameData.Team.NONE)
@@ -212,10 +214,13 @@ func _spawn_player_node(peer_id: int, spawn_pos: Vector3, team: int, display_nam
 		players_container = _arena_node
 	players_container.add_child(player, true)
 
-	if player.has_method("set_multiplayer_authority"):
-		player.set_multiplayer_authority(peer_id)
-
-	_notify_player_spawned.rpc_id(peer_id, player.get_path(), peer_id, team)
+	if multiplayer.has_multiplayer_peer():
+		if player.has_method("set_multiplayer_authority"):
+			player.set_multiplayer_authority(peer_id)
+		_notify_player_spawned.rpc_id(peer_id, player.get_path(), peer_id, team)
+	else:
+		if player.has_method("init_as_local_player"):
+			player.init_as_local_player(peer_id, team)
 
 @rpc("authority", "call_local", "reliable")
 func _notify_player_spawned(player_path: NodePath, peer_id: int, team: int) -> void:
