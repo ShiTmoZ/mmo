@@ -1,0 +1,292 @@
+[gd_scene load_steps=2 format=3 uid="uid://combathud_scene"]
+
+[ext_resource type="Script" path="res://scripts/ui/CombatHUD.gd" id="1_hud"]
+
+[node name="CombatHUD" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_hud")
+
+[node name="VitalsPanel" type="PanelContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -220.0
+offset_right = 320.0
+offset_bottom = -16.0
+theme_override_styles/panel = StyleBoxFlat
+
+[node name="VBox" type="VBoxContainer" parent="VitalsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PlayerNameLabel" type="Label" parent="VitalsPanel/VBox"]
+layout_mode = 2
+text = "Player"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+
+[node name="HealthLabel" type="Label" parent="VitalsPanel/VBox"]
+layout_mode = 2
+text = "Health"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="HealthBar" type="ProgressBar" parent="VitalsPanel/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 18)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/fill = StyleBoxFlat
+theme_override_colors/font_color = Color(0.2, 0.8, 0.2, 1)
+
+[node name="ManaLabel" type="Label" parent="VitalsPanel/VBox"]
+layout_mode = 2
+text = "Mana"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="ManaBar" type="ProgressBar" parent="VitalsPanel/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 18)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_colors/font_color = Color(0.2, 0.4, 0.9, 1)
+
+[node name="StaminaLabel" type="Label" parent="VitalsPanel/VBox"]
+layout_mode = 2
+text = "Stamina"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="StaminaBar" type="ProgressBar" parent="VitalsPanel/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 18)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_colors/font_color = Color(0.9, 0.8, 0.1, 1)
+
+[node name="StaggerLabel" type="Label" parent="VitalsPanel/VBox"]
+layout_mode = 2
+text = "Stagger"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="StaggerBar" type="ProgressBar" parent="VitalsPanel/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(280, 18)
+max_value = 100.0
+value = 0.0
+show_percentage = false
+theme_override_colors/font_color = Color(0.9, 0.3, 0.1, 1)
+
+[node name="SelfCastPanel" type="PanelContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -130.0
+offset_right = 200.0
+offset_bottom = -90.0
+visible = false
+
+[node name="CastVBox" type="VBoxContainer" parent="SelfCastPanel"]
+layout_mode = 2
+
+[node name="SpellNameLabel" type="Label" parent="SelfCastPanel/CastVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Fireball"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(1.0, 0.85, 0.4, 1)
+
+[node name="CastBar" type="ProgressBar" parent="SelfCastPanel/CastVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(380, 20)
+max_value = 100.0
+value = 0.0
+show_percentage = false
+theme_override_colors/font_color = Color(0.9, 0.6, 0.1, 1)
+
+[node name="InterruptedLabel" type="Label" parent="SelfCastPanel/CastVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "INTERRUPTED!"
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(1.0, 0.15, 0.1, 1)
+visible = false
+
+[node name="TargetFrame" type="PanelContainer" parent="."]
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -340.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 160.0
+visible = false
+
+[node name="TargetVBox" type="VBoxContainer" parent="TargetFrame"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TargetNameLabel" type="Label" parent="TargetFrame/TargetVBox"]
+layout_mode = 2
+text = "Enemy"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.9, 0.3, 0.3, 1)
+
+[node name="TargetHealthLabel" type="Label" parent="TargetFrame/TargetVBox"]
+layout_mode = 2
+text = "Health"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="TargetHealthBar" type="ProgressBar" parent="TargetFrame/TargetVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(290, 18)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_colors/font_color = Color(0.85, 0.2, 0.2, 1)
+
+[node name="TargetCastPanel" type="PanelContainer" parent="TargetFrame/TargetVBox"]
+layout_mode = 2
+visible = false
+
+[node name="TCastVBox" type="VBoxContainer" parent="TargetFrame/TargetVBox/TargetCastPanel"]
+layout_mode = 2
+
+[node name="TargetCastLabel" type="Label" parent="TargetFrame/TargetVBox/TargetCastPanel/TCastVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Casting"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.9, 0.6, 0.2, 1)
+
+[node name="TargetCastBar" type="ProgressBar" parent="TargetFrame/TargetVBox/TargetCastPanel/TCastVBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(290, 14)
+max_value = 100.0
+value = 0.0
+show_percentage = false
+
+[node name="ActionBar" type="HBoxContainer" parent="."]
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -144.0
+offset_top = -80.0
+offset_right = 144.0
+offset_bottom = -16.0
+theme_override_constants/separation = 8
+
+[node name="Slot1" type="PanelContainer" parent="ActionBar"]
+custom_minimum_size = Vector2(88, 60)
+
+[node name="SlotVBox" type="VBoxContainer" parent="ActionBar/Slot1"]
+layout_mode = 2
+
+[node name="SlotLabel" type="Label" parent="ActionBar/Slot1/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "1"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+
+[node name="SpellLabel" type="Label" parent="ActionBar/Slot1/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Fireball"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+autowrap_mode = 2
+
+[node name="CooldownLabel" type="Label" parent="ActionBar/Slot1/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = ""
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.9, 0.4, 0.2, 1)
+
+[node name="CooldownOverlay" type="ColorRect" parent="ActionBar/Slot1"]
+layout_mode = 2
+color = Color(0, 0, 0, 0.55)
+visible = false
+
+[node name="Slot2" type="PanelContainer" parent="ActionBar"]
+custom_minimum_size = Vector2(88, 60)
+
+[node name="SlotVBox" type="VBoxContainer" parent="ActionBar/Slot2"]
+layout_mode = 2
+
+[node name="SlotLabel" type="Label" parent="ActionBar/Slot2/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "2"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+
+[node name="SpellLabel" type="Label" parent="ActionBar/Slot2/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Frost Nova"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+autowrap_mode = 2
+
+[node name="CooldownLabel" type="Label" parent="ActionBar/Slot2/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = ""
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.9, 0.4, 0.2, 1)
+
+[node name="CooldownOverlay" type="ColorRect" parent="ActionBar/Slot2"]
+layout_mode = 2
+color = Color(0, 0, 0, 0.55)
+visible = false
+
+[node name="Slot3" type="PanelContainer" parent="ActionBar"]
+custom_minimum_size = Vector2(88, 60)
+
+[node name="SlotVBox" type="VBoxContainer" parent="ActionBar/Slot3"]
+layout_mode = 2
+
+[node name="SlotLabel" type="Label" parent="ActionBar/Slot3/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "3"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+
+[node name="SpellLabel" type="Label" parent="ActionBar/Slot3/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Counterspell"
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+autowrap_mode = 2
+
+[node name="CooldownLabel" type="Label" parent="ActionBar/Slot3/SlotVBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = ""
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.9, 0.4, 0.2, 1)
+
+[node name="CooldownOverlay" type="ColorRect" parent="ActionBar/Slot3"]
+layout_mode = 2
+color = Color(0, 0, 0, 0.55)
+visible = false

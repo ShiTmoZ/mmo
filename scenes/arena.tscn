@@ -1,0 +1,95 @@
+[gd_scene load_steps=12 format=3 uid="uid://arena_scene"]
+
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="1_player"]
+
+[sub_resource type="CylinderShape3D" id="1_floor_shape"]
+radius = 15.5
+height = 0.5
+
+[sub_resource type="StandardMaterial3D" id="2_floor_mat"]
+albedo_color = Color(0.25, 0.22, 0.18, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="3_floor_mesh"]
+top_radius = 15.0
+bottom_radius = 15.0
+height = 0.5
+
+[sub_resource type="CylinderShape3D" id="4_wall_shape"]
+radius = 15.6
+height = 4.0
+
+[sub_resource type="StandardMaterial3D" id="5_wall_mat"]
+albedo_color = Color(0.55, 0.48, 0.40, 1)
+roughness = 0.9
+cull_mode = 2
+
+[sub_resource type="CylinderMesh" id="6_wall_mesh"]
+top_radius = 15.5
+bottom_radius = 15.5
+height = 4.0
+
+[sub_resource type="Environment" id="7_env"]
+background_mode = 1
+background_color = Color(0.05, 0.04, 0.06, 1)
+ambient_light_color = Color(0.3, 0.28, 0.35, 1)
+ambient_light_energy = 0.4
+fog_enabled = false
+
+[sub_resource type="WorldEnvironment" id="8_world_env"]
+
+[node name="arena" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("7_env")
+
+[node name="ArenaFloor" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ArenaFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("1_floor_shape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ArenaFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("3_floor_mesh")
+surface_material_override/0 = SubResource("2_floor_mat")
+
+[node name="ArenaWall" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ArenaWall"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+shape = SubResource("4_wall_shape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ArenaWall"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+mesh = SubResource("6_wall_mesh")
+surface_material_override/0 = SubResource("5_wall_mat")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 18, 0)
+light_color = Color(1, 0.95, 0.85, 1)
+light_energy = 1.8
+shadow_enabled = true
+
+[node name="AmbientOmni" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8, 0)
+light_color = Color(0.4, 0.3, 0.6, 1)
+light_energy = 0.5
+omni_range = 35.0
+
+[node name="SpawnMarker_Team1" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1, 0)
+
+[node name="SpawnMarker_Team2" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 1, 0)
+
+[node name="Players" type="Node3D" parent="."]
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Players")
+auto_spawn_list = [ExtResource("1_player")]
+spawn_limit = 4
