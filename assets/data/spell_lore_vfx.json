@@ -1,0 +1,92 @@
+{
+  "project": "Ashen Sanctum",
+  "classes": {
+    "Templar": [
+      {
+        "spell_name": "Ember Cleave",
+        "tooltip": "Sweep your blade through the soot-choked air, igniting the blood of the unworthy.",
+        "vfx_colors": {
+          "primary_hex": "#FF4500",
+          "secondary_hex": "#4A0E0E"
+        },
+        "sound_cue": "Heavy scraping iron followed by the guttural roar of ignited furnace flames."
+      },
+      {
+        "spell_name": "Martyr's Aegis",
+        "tooltip": "Call upon the charred bones of the ancient Saints to form a bulwark of hardened ash.",
+        "vfx_colors": {
+          "primary_hex": "#B0C4DE",
+          "secondary_hex": "#FFD700"
+        },
+        "sound_cue": "A resonant, rusted bell toll accompanied by the grinding of heavy stone slabs."
+      },
+      {
+        "spell_name": "Zealot's Descent",
+        "tooltip": "Crash from the heavens like a dying star, crushing heretics beneath holy, molten iron.",
+        "vfx_colors": {
+          "primary_hex": "#FFA500",
+          "secondary_hex": "#8B0000"
+        },
+        "sound_cue": "Deafening metallic crash shattering instantly into a crackling bonfire."
+      }
+    ],
+    "Cleric": [
+      {
+        "spell_name": "Sanguine Mending",
+        "tooltip": "Offer your own vitality to stitch the wounds of an ally with threads of warm crimson.",
+        "vfx_colors": {
+          "primary_hex": "#8A0303",
+          "secondary_hex": "#F5F5DC"
+        },
+        "sound_cue": "Wet, tearing flesh giving way to a soft, deeply echoing heartbeat."
+      },
+      {
+        "spell_name": "Hollow Consecration",
+        "tooltip": "Desecrate the soil, causing pale ethereal hands to grasp at the ankles of trespassers.",
+        "vfx_colors": {
+          "primary_hex": "#2F4F4F",
+          "secondary_hex": "#7FFFD4"
+        },
+        "sound_cue": "Low, mournful choral whispers layered over the sound of cracking permafrost."
+      },
+      {
+        "spell_name": "Choir of the Forsaken",
+        "tooltip": "Unleash a silent scream that knits shattered bone and purges the taint from the devout.",
+        "vfx_colors": {
+          "primary_hex": "#E6E6FA",
+          "secondary_hex": "#191970"
+        },
+        "sound_cue": "A dissonant vocal choir abruptly resolving into a sudden, vacuum-like silence."
+      }
+    ],
+    "Spellblade": [
+      {
+        "spell_name": "Abyssal Thrust",
+        "tooltip": "Pierce the veil of reality, driving a rapier of condensed void into the enemy's soul.",
+        "vfx_colors": {
+          "primary_hex": "#4B0082",
+          "secondary_hex": "#000000"
+        },
+        "sound_cue": "High-pitched crystalline tearing ending in a deep, concussive sub-bass thud."
+      },
+      {
+        "spell_name": "Phantom Riposte",
+        "tooltip": "Step into the grey spaces between moments to deflect a fatal blow and sever the attacker's shadow.",
+        "vfx_colors": {
+          "primary_hex": "#708090",
+          "secondary_hex": "#00FFFF"
+        },
+        "sound_cue": "Sharp glass shattering instantly muted by a rushing, otherworldly wind."
+      },
+      {
+        "spell_name": "Eclipse Flurry",
+        "tooltip": "Unleash a storm of astral steel, briefly eclipsing the battlefield in absolute, suffocating darkness.",
+        "vfx_colors": {
+          "primary_hex": "#0F0F0F",
+          "secondary_hex": "#8A2BE2"
+        },
+        "sound_cue": "Rapid, overlapping scythe swoops concluding with a sharp, piercing chime."
+      }
+    ]
+  }
+}
