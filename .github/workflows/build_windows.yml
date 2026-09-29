@@ -1,0 +1,43 @@
+name: "Build Windows Client & Headless Server"
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  export_windows:
+    name: Windows Export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Godot Export Environment
+        run: |
+          sudo apt-get update && sudo apt-get install -y wget unzip
+          GODOT_VERSION="4.3"
+          RELEASE_NAME="4.3-stable"
+          
+          # Download Godot Linux Headless Binary
+          wget -q https://github.com/godotengine/godot/releases/download/${RELEASE_NAME}/Godot_v${RELEASE_NAME}_linux.x86_64.zip
+          unzip -q Godot_v${RELEASE_NAME}_linux.x86_64.zip
+          mv Godot_v${RELEASE_NAME}_linux.x86_64 /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+
+          # Download and Setup Export Templates
+          wget -q https://github.com/godotengine/godot/releases/download/${RELEASE_NAME}/Godot_v${RELEASE_NAME}_export_templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/${RELEASE_NAME}
+          unzip -q Godot_v${RELEASE_NAME}_export_templates.tpz
+          mv templates/* ~/.local/share/godot/export_templates/${RELEASE_NAME}/
+
+      - name: Export Windows Desktop (.exe)
+        run: |
+          mkdir -p build/windows
+          godot --headless --export-release "Windows Desktop" build/windows/AshenSanctum.exe
+
+      - name: Upload Windows Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AshenSanctum-Windows-x86_64
+          path: build/windows/
