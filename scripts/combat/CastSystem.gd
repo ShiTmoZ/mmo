@@ -77,8 +77,9 @@ func try_cast(spell_id: int, caster: Node, target: Node) -> bool:
 	caster.spend_mana(spell.mana_cost)
 
 	if spell.cast_time <= 0.0:
-		# Instant spell — resolve immediately
-		_resolve_hit(spell, caster, target)
+		# Instant spell — resolve immediately (except PBAoE spells handled by Player)
+		if spell_id != 2:
+			_resolve_hit(spell, caster, target)
 		_start_cooldown(spell_id, spell.cooldown)
 		return true
 
@@ -185,7 +186,9 @@ func _finish_cast() -> void:
 	# Find current target on owner player
 	var target: Node = _owner_player.get_current_target() if _owner_player.has_method("get_current_target") else null
 
-	_resolve_hit(spell, _owner_player, target)
+	# Fireball (1) damage is deferred until projectile impact; instant PBAoE (2) handled by Player
+	if spell_id != 1 and spell_id != 2:
+		_resolve_hit(spell, _owner_player, target)
 	_start_cooldown(spell_id, spell.cooldown)
 	cast_completed.emit(spell_id)
 

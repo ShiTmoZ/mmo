@@ -109,6 +109,7 @@ func _load_arena_solo() -> void:
 		return
 	_arena_node = arena_resource.instantiate()
 	get_tree().root.add_child(_arena_node)
+	get_tree().current_scene = _arena_node
 
 	arena_ready.emit()
 
@@ -116,8 +117,8 @@ func _load_arena_solo() -> void:
 	var spawn_pos: Vector3 = GameData.SPAWN_TEAM_1
 	_spawn_player_node(1, spawn_pos, GameData.Team.TEAM_1, "Champion")
 
-	# Spawn training dummy 12m in front of player for solo practice
-	var dummy_pos: Vector3 = Vector3(-6.0, 1.0, 0.0)
+	# Spawn training dummy 4m in front of player for immediate combat testing
+	var dummy_pos: Vector3 = Vector3(-14.0, 1.0, 0.0)
 	_spawn_training_dummy(dummy_pos, GameData.Team.TEAM_2)
 
 func _spawn_training_dummy(spawn_pos: Vector3, dummy_team: int) -> void:
@@ -135,6 +136,12 @@ func _spawn_training_dummy(spawn_pos: Vector3, dummy_team: int) -> void:
 	if players_container == null:
 		players_container = _arena_node
 	players_container.add_child(dummy)
+	# Notify local player to auto-lock the dummy
+	var local_player: Node = players_container.get_node_or_null("Player_1")
+	if local_player != null and local_player.has_method("_refresh_target_list"):
+		local_player._refresh_target_list()
+		if local_player.has_method("_auto_select_initial_target"):
+			local_player._auto_select_initial_target()
 
 func request_start_arena() -> void:
 	if not multiplayer.is_server():
@@ -168,6 +175,7 @@ func _load_arena() -> void:
 		return
 	_arena_node = arena_resource.instantiate()
 	get_tree().root.add_child(_arena_node)
+	get_tree().current_scene = _arena_node
 
 	_spawner = _arena_node.get_node_or_null("MultiplayerSpawner") as MultiplayerSpawner
 	if _spawner == null:

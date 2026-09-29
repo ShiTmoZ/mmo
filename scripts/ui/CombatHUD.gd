@@ -81,13 +81,17 @@ func _process(delta: float) -> void:
 
 	# Update self cast bar
 	if _cast_system and _cast_system.is_casting():
-		_self_cast_panel.show()
-		_self_cast_bar.value = _cast_system.get_cast_progress() * 100.0
+		if _self_cast_panel:
+			_self_cast_panel.show()
+		if _self_cast_bar:
+			_self_cast_bar.value = _cast_system.get_cast_progress() * 100.0
 		var spell_id: int = _cast_system.get_current_spell_id()
 		var spell = GameData.get_spell(spell_id)
-		_self_cast_spell_label.text = spell.display_name if spell else "Casting..."
+		if _self_cast_spell_label:
+			_self_cast_spell_label.text = spell.display_name if spell else "Casting..."
 	elif _interrupt_flash_timer <= 0.0:
-		_self_cast_panel.hide()
+		if _self_cast_panel:
+			_self_cast_panel.hide()
 
 	# Update target frame
 	if _target != null and is_instance_valid(_target):
@@ -127,37 +131,49 @@ func update_vitals() -> void:
 
 func set_target(target: Node) -> void:
 	_target = target
-	if target != null:
-		_target_name_label.text = target.display_name if "display_name" in target else "Enemy"
-		_target_frame.show()
-	else:
-		_target_frame.hide()
+	if _target_frame:
+		if target != null:
+			if _target_name_label:
+				_target_name_label.text = target.display_name if "display_name" in target else "Enemy"
+			_target_frame.show()
+		else:
+			_target_frame.hide()
 
 func on_cast_started(spell_id: int, cast_time: float) -> void:
 	var spell = GameData.get_spell(spell_id)
-	_self_cast_panel.show()
-	_self_cast_bar.value = 0.0
-	_self_cast_spell_label.text = spell.display_name if spell else "Casting..."
-	_self_cast_interrupt_label.hide()
+	if _self_cast_panel:
+		_self_cast_panel.show()
+	if _self_cast_bar:
+		_self_cast_bar.value = 0.0
+	if _self_cast_spell_label:
+		_self_cast_spell_label.text = spell.display_name if spell else "Casting..."
+	if _self_cast_interrupt_label:
+		_self_cast_interrupt_label.hide()
 
 func on_cast_completed(_spell_id: int) -> void:
-	_self_cast_panel.hide()
+	if _self_cast_panel:
+		_self_cast_panel.hide()
 
 func on_cast_interrupted(_spell_id: int) -> void:
-	_self_cast_panel.show()
-	_self_cast_bar.value = 0.0
-	_self_cast_spell_label.text = ""
-	_self_cast_interrupt_label.text = "INTERRUPTED!"
-	_self_cast_interrupt_label.show()
-	# Flash red: modulate the panel
-	_self_cast_panel.modulate = Color(1.0, 0.2, 0.2, 1.0)
-	var tween: Tween = create_tween()
-	tween.tween_property(_self_cast_panel, "modulate", Color.WHITE, 0.5)
+	if _self_cast_panel:
+		_self_cast_panel.show()
+		_self_cast_panel.modulate = Color(1.0, 0.2, 0.2, 1.0)
+		var tween: Tween = create_tween()
+		tween.tween_property(_self_cast_panel, "modulate", Color.WHITE, 0.5)
+	if _self_cast_bar:
+		_self_cast_bar.value = 0.0
+	if _self_cast_spell_label:
+		_self_cast_spell_label.text = ""
+	if _self_cast_interrupt_label:
+		_self_cast_interrupt_label.text = "INTERRUPTED!"
+		_self_cast_interrupt_label.show()
 	_interrupt_flash_timer = _INTERRUPT_FLASH_DURATION
 
 func on_cast_cancelled() -> void:
-	_self_cast_panel.hide()
-	_self_cast_interrupt_label.hide()
+	if _self_cast_panel:
+		_self_cast_panel.hide()
+	if _self_cast_interrupt_label:
+		_self_cast_interrupt_label.hide()
 
 func on_player_died() -> void:
 	# Optionally show death overlay — simple label for now

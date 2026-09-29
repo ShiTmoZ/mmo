@@ -205,13 +205,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		_camera_yaw -= mm.relative.x * 0.005
 		_camera_pitch = clampf(_camera_pitch - mm.relative.y * 0.005, -1.2, 0.3)
 
-	# Spell slots
-	if event.is_action_pressed("cast_slot_1"):
-		_initiate_cast(spell_slot_1)
-	elif event.is_action_pressed("cast_slot_2"):
-		_initiate_cast(spell_slot_2)
-	elif event.is_action_pressed("cast_slot_3"):
-		_initiate_cast(spell_slot_3)
+	# Spell slots (action or direct keyboard 1, 2, 3)
+	var spell_to_cast: int = -1
+	if event.is_action_pressed("cast_slot_1") or (event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_1 or event.physical_keycode == KEY_1)):
+		spell_to_cast = spell_slot_1
+	elif event.is_action_pressed("cast_slot_2") or (event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_2 or event.physical_keycode == KEY_2)):
+		spell_to_cast = spell_slot_2
+	elif event.is_action_pressed("cast_slot_3") or (event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_3 or event.physical_keycode == KEY_3)):
+		spell_to_cast = spell_slot_3
+
+	if spell_to_cast > 0:
+		_initiate_cast(spell_to_cast)
 
 	# Tab cycle target
 	if event.is_action_pressed("cycle_target"):
@@ -477,6 +481,9 @@ func _refresh_target_list() -> void:
 		var child_team: int = child.team if ("team" in child) else child.get_meta("team", GameData.Team.NONE)
 		if child_team != team and child_team != GameData.Team.NONE:
 			_potential_targets.append(child)
+	_potential_targets.sort_custom(func(a: Node, b: Node) -> bool:
+		return global_position.distance_squared_to(a.global_position) < global_position.distance_squared_to(b.global_position)
+	)
 
 func _try_click_select_target() -> void:
 	if _camera == null:
@@ -540,13 +547,13 @@ func _initiate_cast(spell_id: int) -> void:
 	if spell == null:
 		return
 
-	# For damage spells require a target; auto-target if none
-	if spell.base_damage > 0.0 and _current_target == null:
+	# If no target selected, attempt auto-acquisition of closest enemy
+	if _current_target == null:
 		_refresh_target_list()
 		if not _potential_targets.is_empty():
 			_set_target(_potential_targets[0])
 
-	var target: Node = _current_target if spell.base_damage > 0.0 else null
+	var target: Node = _current_target
 
 	if spell.cast_time > 0.0:
 		current_state = GameData.PlayerState.CASTING
@@ -567,34 +574,37 @@ func _execute_instant_spell(spell_id: int, target: Node) -> void:
 	if _anim_player:
 		_anim_player.play("Spellcast_Raise", 0.05)
 
-	if spell_id == 2: # Frost Nova
+	if spell_id == 2: # Frost Nova (PBAoE: hits ALL nearby enemies)
 		var vfx_fn: Node = _get_vfx()
 		if vfx_fn != null and vfx_fn.has_method("frost_nova_expand"):
 			vfx_fn.frost_nova_expand(global_position)
-		if target != null and global_position.distance_to(target.global_position) <= 18.0:
-			if target.has_method("receive_damage"):
-				target.receive_damage(45.0)
-			if target.has_method("play_hit_reaction"):
-				target.play_hit_reaction()
-			if vfx_fn != null and vfx_fn.has_method("spawn_fct"):
-				vfx_fn.spawn_fct(target.global_position + Vector3(0, 1.8, 0), 45.0, false, "frost")
-				vfx_fn.trigger_screen_shake(0.35, 0.2)
-	elif spell_id == 6 or spell_id == 3: # Arcane Blast / Counterspell
+		_refresh_target_list()
+		for enemy in _potential_targets:
+			if enemy != null and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= 18.0:
+				if enemy.has_method("receive_damage"):
+					enemy.receive_damage(45.0)
+				if enemy.has_method("play_hit_reaction"):
+					enemy.play_hit_reaction()
+				if vfx_fn != null and vfx_fn.has_method("spawn_fct"):
+					vfx_fn.spawn_fct(enemy.global_position + Vector3(0, 1.8, 0), 45.0, false, "frost")
+				if is_inside_tree() and multiplayer and multiplayer.has_multiplayer_peer():
+					_cast_system.server_validate_hit.rpc(get_path(), enemy.get_path(), spell_id)
+		if vfx_fn != null and vfx_fn.has_method("trigger_screen_shake"):
+			vfx_fn.trigger_screen_shake(0.35, 0.2)
+	elif spell_id == 6: # Counterspell
 		var hit_pos: Vector3 = target.global_position if target != null else (global_position - transform.basis.z * 10.0)
-		var vfx_arc: Node = _get_vfx()
-		if vfx_arc != null and vfx_arc.has_method("counterspell_crack"):
-			vfx_arc.counterspell_crack(hit_pos)
+		var vfx_cs: Node = _get_vfx()
+		if vfx_cs != null and vfx_cs.has_method("counterspell_crack"):
+			vfx_cs.counterspell_crack(hit_pos)
 		if target != null:
 			if target.has_method("receive_damage"):
 				target.receive_damage(60.0)
 			if target.has_method("play_hit_reaction"):
 				target.play_hit_reaction()
-			if vfx_arc != null and vfx_arc.has_method("spawn_fct"):
-				vfx_arc.spawn_fct(target.global_position + Vector3(0, 1.8, 0), 60.0, false, "arcane")
-				vfx_arc.trigger_screen_shake(0.3, 0.2)
-
-	if target != null and multiplayer.has_multiplayer_peer():
-		_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
+			if vfx_cs != null and vfx_cs.has_method("spawn_fct"):
+				vfx_cs.spawn_fct(target.global_position + Vector3(0, 1.8, 0), 60.0, false, "arcane")
+			if is_inside_tree() and multiplayer and multiplayer.has_multiplayer_peer():
+				_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
 
 func _on_cast_started(spell_id: int, cast_time: float) -> void:
 	current_state = GameData.PlayerState.CASTING
@@ -607,21 +617,34 @@ func _on_cast_completed(spell_id: int) -> void:
 		_anim_player.play("Spellcast_Shoot", 0.05)
 
 	var target: Node = _current_target
+	if target == null:
+		_refresh_target_list()
+		if not _potential_targets.is_empty():
+			target = _potential_targets[0]
+
 	if spell_id == 1: # Fireball
+		var shoot_dir: Vector3 = -global_transform.basis.z
 		var start_pos: Vector3 = global_position + Vector3(0.0, 1.3, 0.0)
-		var target_pos: Vector3 = target.global_position + Vector3(0.0, 1.0, 0.0) if target != null else (global_position - transform.basis.z * 18.0 + Vector3(0.0, 1.0, 0.0))
+		var target_pos: Vector3 = target.global_position + Vector3(0.0, 1.0, 0.0) if target != null else (start_pos + shoot_dir * 25.0)
 		var vfx: Node = _get_vfx()
 		if vfx != null and vfx.has_method("launch_fireball"):
 			vfx.launch_fireball(start_pos, target_pos, func() -> void:
-				if target != null and is_instance_valid(target):
-					if target.has_method("receive_damage"):
-						target.receive_damage(85.0)
-					if target.has_method("play_hit_reaction"):
-						target.play_hit_reaction()
+				var hit_enemy: Node = target
+				if hit_enemy == null:
+					_refresh_target_list()
+					for c in _potential_targets:
+						if c != null and is_instance_valid(c) and c.global_position.distance_to(target_pos) <= 4.0:
+							hit_enemy = c
+							break
+				if hit_enemy != null and is_instance_valid(hit_enemy):
+					if hit_enemy.has_method("receive_damage"):
+						hit_enemy.receive_damage(85.0)
+					if hit_enemy.has_method("play_hit_reaction"):
+						hit_enemy.play_hit_reaction()
 					if vfx.has_method("spawn_fct"):
-						vfx.spawn_fct(target.global_position + Vector3(0, 1.8, 0), 85.0, false, "fire")
+						vfx.spawn_fct(hit_enemy.global_position + Vector3(0, 1.8, 0), 85.0, false, "fire")
 					if is_inside_tree() and multiplayer and multiplayer.has_multiplayer_peer():
-						_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
+						_cast_system.server_validate_hit.rpc(get_path(), hit_enemy.get_path(), spell_id)
 			)
 		else:
 			if target != null and is_instance_valid(target):
@@ -629,6 +652,17 @@ func _on_cast_completed(spell_id: int) -> void:
 					target.receive_damage(85.0)
 				if is_inside_tree() and multiplayer and multiplayer.has_multiplayer_peer():
 					_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
+	elif spell_id == 3: # Arcane Blast
+		var hit_pos: Vector3 = target.global_position + Vector3(0.0, 1.0, 0.0) if target != null else (global_position - transform.basis.z * 15.0)
+		var vfx_ab: Node = _get_vfx()
+		if vfx_ab != null and vfx_ab.has_method("counterspell_crack"):
+			vfx_ab.counterspell_crack(hit_pos)
+		if target != null and is_instance_valid(target):
+			if target.has_method("play_hit_reaction"):
+				target.play_hit_reaction()
+			if vfx_ab != null and vfx_ab.has_method("spawn_fct"):
+				vfx_ab.spawn_fct(target.global_position + Vector3(0, 1.8, 0), 110.0, false, "arcane")
+				vfx_ab.trigger_screen_shake(0.35, 0.2)
 	else:
 		if target != null and is_instance_valid(target):
 			if target.has_method("receive_damage"):

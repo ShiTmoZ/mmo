@@ -53,60 +53,62 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	instance = self
-	_build_fct_pool()
 
 func _process(delta: float) -> void:
 	_tick_screen_shake(delta)
 
-## ─── FCT Pool ────────────────────────────────────────────────────────────────
-func _build_fct_pool() -> void:
-	var root: Node = fct_parent if fct_parent != null else self
-	for i: int in range(FCT_POOL_SIZE):
-		var lbl: Label3D = Label3D.new()
-		lbl.font_size = 52
-		lbl.modulate = Color.WHITE
-		lbl.outline_size = 6
-		lbl.outline_modulate = Color(0.0, 0.0, 0.0, 0.8)
-		lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		lbl.no_depth_test = true
-		lbl.visible = false
-		lbl.pixel_size = 0.003
-		root.add_child(lbl)
-		_fct_pool.append(lbl)
+func _get_world_root() -> Node:
+	if get_tree() == null:
+		return null
+	var cs = get_tree().current_scene
+	if cs != null and is_instance_valid(cs) and cs is Node3D:
+		return cs
+	var root: Window = get_tree().root
+	if root == null:
+		return null
+	var arena: Node = root.get_node_or_null("arena")
+	if arena != null:
+		return arena
+	arena = root.get_node_or_null("Arena")
+	if arena != null:
+		return arena
+	for child in root.get_children():
+		if child is Node3D:
+			return child
+	return root
 
 ## ─── Public API ──────────────────────────────────────────────────────────────
 
 ## Spawn a floating damage number above world_position
 func spawn_fct(world_position: Vector3, damage: float, is_crit: bool, school: String = "fire") -> void:
-	var lbl: Label3D = _fct_pool[_fct_index]
-	_fct_index = (_fct_index + 1) % FCT_POOL_SIZE
-
+	var world_root: Node = _get_world_root()
+	if world_root == null:
+		return
+	var lbl: Label3D = Label3D.new()
+	lbl.font_size = 72 if is_crit else 52
+	lbl.outline_size = 6
+	lbl.outline_modulate = Color(0.0, 0.0, 0.0, 0.8)
+	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lbl.no_depth_test = true
+	lbl.pixel_size = 0.003
 	var text: String = str(int(damage))
 	if is_crit:
 		text = "!! " + text + " !!"
-
 	lbl.text = text
-	lbl.global_position = world_position + Vector3(randf_range(-0.3, 0.3), 1.8, randf_range(-0.3, 0.3))
-
 	match school:
 		"fire":    lbl.modulate = Color(1.0, 0.5, 0.0, 1.0)
 		"frost":   lbl.modulate = Color(0.3, 0.9, 1.0, 1.0)
 		"arcane":  lbl.modulate = Color(0.85, 0.3, 1.0, 1.0)
-		_:         lbl.modulate = Color.WHITE
+		_:         lbl.modulate = Color(1.0, 0.95, 0.1, 1.0) if is_crit else Color.WHITE
 
-	if is_crit:
-		lbl.font_size = 72
-		lbl.modulate = Color(1.0, 0.95, 0.1, 1.0)
-	else:
-		lbl.font_size = 52
+	world_root.add_child(lbl)
+	lbl.global_position = world_position + Vector3(randf_range(-0.3, 0.3), 1.8, randf_range(-0.3, 0.3))
 
-	lbl.visible = true
-
-	var tween: Tween = create_tween()
-	var rise_vec: Vector3 = lbl.global_position + Vector3(0.0, 2.5, 0.0)
-	tween.tween_property(lbl, "global_position", rise_vec, 1.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_EXPO)
-	tween.parallel().tween_property(lbl, "modulate:a", 0.0, 1.6).set_delay(0.6)
-	tween.tween_callback(func() -> void: lbl.visible = false)
+	var tween: Tween = lbl.create_tween()
+	var rise_vec: Vector3 = lbl.global_position + Vector3(0.0, 2.2, 0.0)
+	tween.tween_property(lbl, "global_position", rise_vec, 1.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_EXPO)
+	tween.parallel().tween_property(lbl, "modulate:a", 0.0, 1.2).set_delay(0.4)
+	tween.finished.connect(lbl.queue_free)
 
 ## ─── Fireball VFX ────────────────────────────────────────────────────────────
 
@@ -145,7 +147,7 @@ func fireball_cast_buildup(hand_pos: Node3D) -> GPUParticles3D:
 	surf.emission = Color(1.5, 0.6, 0.0, 1.0)
 	surf.emission_energy_multiplier = 3.0
 	surf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mesh.surface_set_material(0, surf)
+	mesh.material = surf
 	ps.draw_pass_1 = mesh
 
 	hand_pos.add_child(ps)
@@ -155,8 +157,8 @@ func fireball_cast_buildup(hand_pos: Node3D) -> GPUParticles3D:
 ## Spawns the fireball projectile body (visual only; physics handled by caller)
 func fireball_projectile(start_pos: Vector3) -> Node3D:
 	var root: Node3D = Node3D.new()
+	_get_world_root().add_child(root)
 	root.global_position = start_pos
-	get_tree().current_scene.add_child(root)
 
 	# Core glow sphere
 	var mesh_inst: MeshInstance3D = MeshInstance3D.new()
@@ -169,7 +171,7 @@ func fireball_projectile(start_pos: Vector3) -> Node3D:
 	mat.emission = Color(1.8, 0.7, 0.0, 1.0)
 	mat.emission_energy_multiplier = 6.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-	sphere.surface_set_material(0, mat)
+	sphere.material = mat
 	mesh_inst.mesh = sphere
 	root.add_child(mesh_inst)
 
@@ -204,7 +206,7 @@ func fireball_projectile(start_pos: Vector3) -> Node3D:
 	tsurf.emission = Color(1.5, 0.5, 0.0, 1.0)
 	tsurf.emission_energy_multiplier = 4.0
 	tsurf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	tmesh.surface_set_material(0, tsurf)
+	tmesh.material = tsurf
 	trail.draw_pass_1 = tmesh
 	root.add_child(trail)
 
@@ -235,7 +237,6 @@ func fireball_explosion(impact_pos: Vector3) -> void:
 	trigger_screen_shake(0.45, 0.25)
 
 	var ps: GPUParticles3D = GPUParticles3D.new()
-	ps.global_position = impact_pos
 	ps.amount = 120
 	ps.lifetime = 1.0
 	ps.explosiveness = 0.9
@@ -266,10 +267,11 @@ func fireball_explosion(impact_pos: Vector3) -> void:
 	surf.emission = Color(2.0, 0.8, 0.0, 1.0)
 	surf.emission_energy_multiplier = 5.0
 	surf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mesh.surface_set_material(0, surf)
+	mesh.material = surf
 	ps.draw_pass_1 = mesh
 
-	get_tree().current_scene.add_child(ps)
+	_get_world_root().add_child(ps)
+	ps.global_position = impact_pos
 	_auto_free_node(ps, 2.5)
 
 	# Ring shockwave
@@ -289,27 +291,19 @@ func frost_nova_expand(origin: Vector3) -> void:
 	mat.emission = Color(0.0, 0.8, 1.2, 1.0)
 	mat.emission_energy_multiplier = 3.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	torus.surface_set_material(0, mat)
+	torus.material = mat
 	ring_inst.mesh = torus
+	_get_world_root().add_child(ring_inst)
 	ring_inst.global_position = origin + Vector3.UP * 0.05
 	ring_inst.rotation_degrees.x = 90.0
-	get_tree().current_scene.add_child(ring_inst)
 
 	var tween: Tween = create_tween()
 	tween.tween_property(ring_inst, "scale", Vector3(5.0, 5.0, 5.0), 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUART)
-	tween.parallel().tween_property(ring_inst, "modulate:a", 0.0, 0.6)
+	tween.parallel().tween_property(ring_inst, "transparency", 1.0, 0.6)
 	tween.tween_callback(ring_inst.queue_free)
 
 	# Frost mist particles
 	var ps: GPUParticles3D = GPUParticles3D.new()
-	ps.global_position = origin
-	ps.amount = 80
-	ps.lifetime = 2.0
-	ps.explosiveness = 0.7
-	ps.randomness = 0.5
-	ps.one_shot = true
-	ps.emitting = true
-
 	var pmat: ParticleProcessMaterial = ParticleProcessMaterial.new()
 	pmat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
 	pmat.emission_sphere_radius = 0.5
@@ -333,10 +327,18 @@ func frost_nova_expand(origin: Vector3) -> void:
 	smat.emission = Color(0.3, 0.8, 1.2, 1.0)
 	smat.emission_energy_multiplier = 2.5
 	smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	smesh.surface_set_material(0, smat)
+	smesh.material = smat
 	ps.draw_pass_1 = smesh
 
-	get_tree().current_scene.add_child(ps)
+	ps.amount = 80
+	ps.lifetime = 2.0
+	ps.explosiveness = 0.7
+	ps.randomness = 0.5
+	ps.one_shot = true
+	ps.emitting = true
+
+	_get_world_root().add_child(ps)
+	ps.global_position = origin
 	_auto_free_node(ps, 3.0)
 
 	# Ice shards
@@ -364,7 +366,7 @@ func frost_nova_shatter(origin: Vector3) -> void:
 	mat.color = Color(0.7, 0.95, 1.0, 0.9)
 	ps.process_material = mat
 
-	get_tree().current_scene.add_child(ps)
+	_get_world_root().add_child(ps)
 	_auto_free_node(ps, 2.5)
 
 func _spawn_ice_shard(origin: Vector3, index: int) -> MeshInstance3D:
@@ -378,17 +380,17 @@ func _spawn_ice_shard(origin: Vector3, index: int) -> MeshInstance3D:
 	smat.emission_energy_multiplier = 2.0
 	smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	smat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	prism.surface_set_material(0, smat)
+	prism.material = smat
 	shard.mesh = prism
 
 	var angle: float = (float(index) / 12.0) * TAU
 	var radius: float = randf_range(0.5, 2.5)
+	_get_world_root().add_child(shard)
 	shard.global_position = origin + Vector3(cos(angle) * radius, 0.05, sin(angle) * radius)
 	shard.rotation_degrees = Vector3(randf_range(-30.0, 30.0), rad_to_deg(angle), randf_range(-20.0, 20.0))
-	get_tree().current_scene.add_child(shard)
 
 	var tween: Tween = create_tween()
-	tween.tween_property(shard, "modulate:a", 0.0, 2.0).set_delay(0.5)
+	tween.tween_property(shard, "transparency", 1.0, 2.0).set_delay(0.5)
 	tween.tween_callback(shard.queue_free)
 	return shard
 
@@ -399,7 +401,6 @@ func counterspell_crack(target_pos: Vector3) -> void:
 
 	# Violet arcane crack burst
 	var ps: GPUParticles3D = GPUParticles3D.new()
-	ps.global_position = target_pos + Vector3.UP * 1.2
 	ps.amount = 60
 	ps.lifetime = 0.7
 	ps.explosiveness = 0.95
@@ -427,10 +428,11 @@ func counterspell_crack(target_pos: Vector3) -> void:
 	surf.emission = Color(0.9, 0.0, 1.2, 1.0)
 	surf.emission_energy_multiplier = 5.0
 	surf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mesh.surface_set_material(0, surf)
+	mesh.material = surf
 	ps.draw_pass_1 = mesh
 
-	get_tree().current_scene.add_child(ps)
+	_get_world_root().add_child(ps)
+	ps.global_position = target_pos + Vector3.UP * 1.2
 	_auto_free_node(ps, 2.0)
 
 	# Shatter glass shards (arcane color)
@@ -444,20 +446,20 @@ func counterspell_crack(target_pos: Vector3) -> void:
 		smat.emission = Color(0.8, 0.0, 1.2, 1.0)
 		smat.emission_energy_multiplier = 3.0
 		smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		box.surface_set_material(0, smat)
+		box.material = smat
 		shard.mesh = box
+		_get_world_root().add_child(shard)
 		shard.global_position = target_pos + Vector3(
 			randf_range(-0.5, 0.5), randf_range(0.8, 1.8), randf_range(-0.5, 0.5)
 		)
 		shard.rotation_degrees = Vector3(randf_range(-60.0, 60.0), randf_range(0.0, 360.0), randf_range(-60.0, 60.0))
-		get_tree().current_scene.add_child(shard)
 
 		var tween: Tween = create_tween()
 		var fall_pos: Vector3 = shard.global_position + Vector3(
 			randf_range(-1.0, 1.0), -2.0, randf_range(-1.0, 1.0)
 		)
 		tween.tween_property(shard, "global_position", fall_pos, 0.6).set_ease(Tween.EASE_IN)
-		tween.parallel().tween_property(shard, "modulate:a", 0.0, 0.6)
+		tween.parallel().tween_property(shard, "transparency", 1.0, 0.6)
 		tween.tween_callback(shard.queue_free)
 
 ## ─── Screen Shake ────────────────────────────────────────────────────────────
@@ -495,16 +497,16 @@ func _spawn_ring_shockwave(origin: Vector3, color: Color, max_scale: float, dura
 	mat.emission = Color(color.r * 1.5, color.g * 1.5, color.b * 1.5, 1.0)
 	mat.emission_energy_multiplier = 2.0
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	torus.surface_set_material(0, mat)
+	torus.material = mat
 	ring.mesh = torus
+	_get_world_root().add_child(ring)
 	ring.global_position = origin + Vector3.UP * 0.1
 	ring.rotation_degrees.x = 90.0
-	get_tree().current_scene.add_child(ring)
 
 	var tween: Tween = create_tween()
 	var s: float = max_scale
 	tween.tween_property(ring, "scale", Vector3(s, s, s), duration).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_EXPO)
-	tween.parallel().tween_property(ring, "modulate:a", 0.0, duration)
+	tween.parallel().tween_property(ring, "transparency", 1.0, duration)
 	tween.tween_callback(ring.queue_free)
 
 ## ─── Gradient Helpers ────────────────────────────────────────────────────────
@@ -559,17 +561,17 @@ func _auto_free_node(node: Node, delay: float) -> void:
 func spawn_dodge_trail(body_mesh: MeshInstance3D, position: Vector3, rotation: Basis, color: Color = Color(0.5, 0.8, 1.0, 0.4)) -> void:
 	var ghost: MeshInstance3D = MeshInstance3D.new()
 	ghost.mesh = body_mesh.mesh
-	ghost.global_position = position
-	ghost.global_transform.basis = rotation
 	var mat: StandardMaterial3D = StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.emission_enabled = true
 	mat.emission = Color(color.r * 0.5, color.g * 0.5, color.b * 0.5, 1.0)
 	mat.emission_energy_multiplier = 1.5
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	ghost.set_surface_override_material(0, mat)
-	get_tree().current_scene.add_child(ghost)
+	ghost.material_override = mat
+	_get_world_root().add_child(ghost)
+	ghost.global_position = position
+	ghost.global_transform.basis = rotation
 
 	var tween: Tween = create_tween()
-	tween.tween_property(ghost, "modulate:a", 0.0, 0.35)
+	tween.tween_property(ghost, "transparency", 1.0, 0.35)
 	tween.tween_callback(ghost.queue_free)
