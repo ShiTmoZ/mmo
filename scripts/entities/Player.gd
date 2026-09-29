@@ -387,7 +387,7 @@ func _initiate_cast(spell_id: int) -> void:
 	if _cast_system.is_on_cooldown(spell_id):
 		return
 
-	var spell: GameData.SpellData = GameData.get_spell(spell_id)
+	var spell = GameData.get_spell(spell_id)
 	if spell == null:
 		return
 

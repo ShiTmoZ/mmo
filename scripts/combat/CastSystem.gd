@@ -54,7 +54,7 @@ func _physics_process(delta: float) -> void:
 # Public API
 # ---------------------------------------------------------------------------
 func try_cast(spell_id: int, caster: Node, target: Node) -> bool:
-	var spell: GameData.SpellData = GameData.get_spell(spell_id)
+	var spell = GameData.get_spell(spell_id)
 	if spell == null:
 		push_warning("CastSystem: Unknown spell id %d" % spell_id)
 		return false
@@ -154,7 +154,7 @@ func get_cooldown_remaining(spell_id: int) -> float:
 	return _cooldowns.get(spell_id, 0.0)
 
 func get_cooldown_fraction(spell_id: int) -> float:
-	var spell: GameData.SpellData = GameData.get_spell(spell_id)
+	var spell = GameData.get_spell(spell_id)
 	if spell == null:
 		return 0.0
 	var remaining: float = get_cooldown_remaining(spell_id)
@@ -170,7 +170,7 @@ func _finish_cast() -> void:
 	_cast_timer       = 0.0
 	_cast_duration    = 0.0
 
-	var spell: GameData.SpellData = GameData.get_spell(spell_id)
+	var spell = GameData.get_spell(spell_id)
 	if spell == null:
 		return
 
@@ -198,7 +198,7 @@ func server_validate_hit(
 	if caster == null or target == null:
 		return
 
-	var spell: GameData.SpellData = GameData.get_spell(spell_id)
+	var spell = GameData.get_spell(spell_id)
 	if spell == null:
 		return
 
@@ -234,12 +234,12 @@ func apply_hit_rpc(target_path: NodePath, spell_id: int) -> void:
 	var target: Node = get_node_or_null(target_path)
 	if target == null:
 		return
-	var spell: GameData.SpellData = GameData.get_spell(spell_id)
+	var spell = GameData.get_spell(spell_id)
 	if spell == null:
 		return
 	_resolve_hit(spell, _owner_player, target)
 
-func _resolve_hit(spell: GameData.SpellData, caster: Node, target: Node) -> void:
+func _resolve_hit(spell, caster: Node, target: Node) -> void:
 	if target == null:
 		# Self-cast heals have no target requirement
 		if spell.base_heal > 0.0 and caster.has_method("receive_heal"):
@@ -265,7 +265,7 @@ func _resolve_hit(spell: GameData.SpellData, caster: Node, target: Node) -> void
 				if target_cast_sys and target_cast_sys.is_casting():
 					# Lock the school of the spell being cast on the target
 					var target_spell_id: int = target_cast_sys.get_current_spell_id()
-					var target_spell: GameData.SpellData = GameData.get_spell(target_spell_id)
+					var target_spell = GameData.get_spell(target_spell_id)
 					var school_to_lock: int = target_spell.school if target_spell else -1
 					target_cast_sys.interrupt_cast(school_to_lock)
 

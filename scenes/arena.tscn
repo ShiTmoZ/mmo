@@ -36,8 +36,6 @@ ambient_light_color = Color(0.3, 0.28, 0.35, 1)
 ambient_light_energy = 0.4
 fog_enabled = false
 
-[sub_resource type="WorldEnvironment" id="8_world_env"]
-
 [node name="arena" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]

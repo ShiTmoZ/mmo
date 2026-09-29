@@ -82,7 +82,7 @@ func _process(delta: float) -> void:
 		_self_cast_panel.show()
 		_self_cast_bar.value = _cast_system.get_cast_progress() * 100.0
 		var spell_id: int = _cast_system.get_current_spell_id()
-		var spell: GameData.SpellData = GameData.get_spell(spell_id)
+		var spell = GameData.get_spell(spell_id)
 		_self_cast_spell_label.text = spell.display_name if spell else "Casting..."
 	elif _interrupt_flash_timer <= 0.0:
 		_self_cast_panel.hide()
@@ -100,7 +100,7 @@ func _process(delta: float) -> void:
 				_target_cast_panel.show()
 				_target_cast_bar.value = t_cs.get_cast_progress() * 100.0
 				var t_spell_id: int = t_cs.get_current_spell_id()
-				var t_spell: GameData.SpellData = GameData.get_spell(t_spell_id)
+				var t_spell = GameData.get_spell(t_spell_id)
 				_target_cast_label.text = t_spell.display_name if t_spell else "Casting"
 			else:
 				_target_cast_panel.hide()
@@ -132,7 +132,7 @@ func set_target(target: Node) -> void:
 		_target_frame.hide()
 
 func on_cast_started(spell_id: int, cast_time: float) -> void:
-	var spell: GameData.SpellData = GameData.get_spell(spell_id)
+	var spell = GameData.get_spell(spell_id)
 	_self_cast_panel.show()
 	_self_cast_bar.value = 0.0
 	_self_cast_spell_label.text = spell.display_name if spell else "Casting..."
@@ -172,7 +172,7 @@ func _populate_action_bar() -> void:
 	_set_slot_spell(2, _player.spell_slot_3 if "spell_slot_3" in _player else 6)
 
 func _set_slot_spell(slot_index: int, spell_id: int) -> void:
-	var spell: GameData.SpellData = GameData.get_spell(spell_id)
+	var spell = GameData.get_spell(spell_id)
 	var label: Label
 	match slot_index:
 		0: label = _slot_1_label
