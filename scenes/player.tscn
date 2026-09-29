@@ -36,6 +36,12 @@ properties/5/replication_mode = 1
 properties/6/path = NodePath(".:current_stagger")
 properties/6/spawn = true
 properties/6/replication_mode = 1
+properties/7/path = NodePath(".:team")
+properties/7/spawn = true
+properties/7/replication_mode = 1
+properties/8/path = NodePath(".:display_name")
+properties/8/spawn = true
+properties/8/replication_mode = 1
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2

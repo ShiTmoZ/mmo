@@ -97,7 +97,17 @@ func _ready() -> void:
 	_cast_system.cast_interrupted.connect(_on_cast_interrupted)
 	_cast_system.cast_cancelled.connect(_on_cast_cancelled)
 
+	# Auto-detect local player on spawn
+	var my_id: int = multiplayer.get_unique_id()
+	if name == "Player_%d" % my_id:
+		call_deferred("_setup_as_local_player", my_id)
+
+func _setup_as_local_player(my_id: int) -> void:
+	init_as_local_player(my_id, team)
+
 func init_as_local_player(peer_id: int, team_id: int) -> void:
+	if _is_local_player:
+		return
 	_is_local_player = true
 	_peer_id         = peer_id
 	team             = team_id
@@ -108,12 +118,13 @@ func init_as_local_player(peer_id: int, team_id: int) -> void:
 		_camera.current = true
 
 	# Load HUD
-	var hud_scene: PackedScene = load("res://scenes/ui/CombatHUD.tscn") as PackedScene
-	if hud_scene:
-		_hud = hud_scene.instantiate()
-		get_tree().root.add_child(_hud)
-		if _hud.has_method("init"):
-			_hud.init(self)
+	if _hud == null:
+		var hud_scene: PackedScene = load("res://scenes/ui/CombatHUD.tscn") as PackedScene
+		if hud_scene:
+			_hud = hud_scene.instantiate()
+			get_tree().root.add_child(_hud)
+			if _hud.has_method("init"):
+				_hud.init(self)
 
 	# Build target list after a frame
 	call_deferred("_refresh_target_list")

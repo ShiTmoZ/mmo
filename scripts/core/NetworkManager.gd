@@ -12,6 +12,7 @@ signal joined_server()
 signal connection_failed()
 signal player_joined(peer_id: int)
 signal player_left(peer_id: int)
+signal player_count_changed(count: int)
 signal arena_ready()
 
 # ---------------------------------------------------------------------------
@@ -32,7 +33,6 @@ var _spawner: MultiplayerSpawner     = null
 # Lifecycle
 # ---------------------------------------------------------------------------
 func _ready() -> void:
-	# Auto-load player scene if not assigned via editor
 	if player_scene == null:
 		player_scene = load("res://scenes/player.tscn") as PackedScene
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -50,7 +50,6 @@ func create_server() -> void:
 		push_error("NetworkManager: Failed to create server, error code %d" % err)
 		return
 	multiplayer.multiplayer_peer = _peer
-	# Server registers itself
 	_register_player(1, "Host", GameData.Team.TEAM_1)
 	server_created.emit()
 	print("NetworkManager: Server started on port %d" % GameData.NETWORK_PORT)
@@ -94,6 +93,8 @@ func get_local_team() -> int:
 # ---------------------------------------------------------------------------
 @rpc("authority", "call_local", "reliable")
 func _load_arena() -> void:
+	if _arena_node != null:
+		return
 	var arena_resource: PackedScene = load(arena_scene_path) as PackedScene
 	if arena_resource == null:
 		push_error("NetworkManager: Cannot load arena scene at %s" % arena_scene_path)
@@ -101,7 +102,6 @@ func _load_arena() -> void:
 	_arena_node = arena_resource.instantiate()
 	get_tree().root.add_child(_arena_node)
 
-	# Hand spawner reference to arena for MultiplayerSpawner
 	_spawner = _arena_node.get_node_or_null("MultiplayerSpawner") as MultiplayerSpawner
 	if _spawner == null:
 		push_error("NetworkManager: Arena missing MultiplayerSpawner node")
@@ -123,47 +123,48 @@ func _spawn_all_players() -> void:
 		var team: int = info.get("team", GameData.Team.TEAM_1)
 		var spawn_pos: Vector3 = _get_spawn_position(team, team_counters[team])
 		team_counters[team] += 1
-		_spawn_player_node(pid, spawn_pos, team, info.get("display_name", "Player"))
+		_spawn_player_node(pid, spawn_pos, team, info.get("display_name", "Player_%d" % pid))
 
 func _get_spawn_position(team: int, index: int) -> Vector3:
 	var base: Vector3 = GameData.SPAWN_TEAM_1 if team == GameData.Team.TEAM_1 else GameData.SPAWN_TEAM_2
-	# Offset additional players slightly so they don't overlap
 	return base + Vector3(0.0, 0.0, float(index) * 2.5)
 
 func _spawn_player_node(peer_id: int, spawn_pos: Vector3, team: int, display_name: String) -> void:
 	if player_scene == null:
-		push_error("NetworkManager: player_scene is not assigned")
-		return
+		player_scene = load("res://scenes/player.tscn") as PackedScene
 	var player: Node3D = player_scene.instantiate() as Node3D
 	player.name = "Player_%d" % peer_id
 	player.set_meta("peer_id",      peer_id)
 	player.set_meta("team",         team)
 	player.set_meta("display_name", display_name)
 	player.position = spawn_pos
+	if "team" in player:
+		player.team = team
+	if "display_name" in player:
+		player.display_name = display_name
 	var players_container: Node = _arena_node.get_node_or_null("Players")
 	if players_container == null:
 		players_container = _arena_node
 	players_container.add_child(player, true)
 
-	# Assign network authority to the owning peer
 	if player.has_method("set_multiplayer_authority"):
 		player.set_multiplayer_authority(peer_id)
 
-	# Notify the owning peer about their player
 	_notify_player_spawned.rpc_id(peer_id, player.get_path(), peer_id, team)
 
 @rpc("authority", "call_local", "reliable")
 func _notify_player_spawned(player_path: NodePath, peer_id: int, team: int) -> void:
-	# Client receives their authoritative player path
-	var player_node: Node = get_node_or_null(player_path)
-	if player_node == null:
-		await get_tree().process_frame
+	var player_node: Node = null
+	for attempt in range(60):
 		player_node = get_node_or_null(player_path)
+		if player_node != null:
+			break
+		await get_tree().process_frame
 	if player_node and player_node.has_method("init_as_local_player"):
 		player_node.init_as_local_player(peer_id, team)
 
 # ---------------------------------------------------------------------------
-# Player registration
+# Player registration & lobby sync
 # ---------------------------------------------------------------------------
 func _register_player(peer_id: int, display_name: String, team: int) -> void:
 	_player_data[peer_id] = {
@@ -171,6 +172,7 @@ func _register_player(peer_id: int, display_name: String, team: int) -> void:
 		"team":         team,
 	}
 	player_joined.emit(peer_id)
+	player_count_changed.emit(_player_data.size())
 	print("NetworkManager: Player registered — id=%d team=%d name=%s" % [peer_id, team, display_name])
 
 @rpc("any_peer", "reliable")
@@ -178,7 +180,6 @@ func register_player_rpc(display_name: String) -> void:
 	if not multiplayer.is_server():
 		return
 	var peer_id: int   = multiplayer.get_remote_sender_id()
-	# Assign team based on join order
 	var team: int = GameData.Team.TEAM_1
 	var t1_count: int = 0
 	var t2_count: int = 0
@@ -190,8 +191,8 @@ func register_player_rpc(display_name: String) -> void:
 	if t2_count < t1_count:
 		team = GameData.Team.TEAM_2
 	_register_player(peer_id, display_name, team)
-	# Acknowledge back to client
 	_ack_registration.rpc_id(peer_id, peer_id, team)
+	_sync_lobby_players.rpc(_player_data)
 	if _arena_node != null:
 		_load_arena.rpc_id(peer_id)
 		var spawn_pos: Vector3 = _get_spawn_position(team, 0)
@@ -199,8 +200,17 @@ func register_player_rpc(display_name: String) -> void:
 
 @rpc("authority", "reliable")
 func _ack_registration(peer_id: int, team: int) -> void:
+	_player_data[peer_id] = {
+		"display_name": "Challenger",
+		"team":         team,
+	}
 	joined_server.emit()
 	print("NetworkManager: Client acknowledged — id=%d team=%d" % [peer_id, team])
+
+@rpc("authority", "reliable")
+func _sync_lobby_players(synced_data: Dictionary) -> void:
+	_player_data = synced_data
+	player_count_changed.emit(_player_data.size())
 
 # ---------------------------------------------------------------------------
 # Connection callbacks
@@ -212,7 +222,9 @@ func _on_peer_disconnected(id: int) -> void:
 	print("NetworkManager: Peer disconnected id=%d" % id)
 	_player_data.erase(id)
 	player_left.emit(id)
-	# Remove their player node if arena is loaded
+	player_count_changed.emit(_player_data.size())
+	if multiplayer.is_server():
+		_sync_lobby_players.rpc(_player_data)
 	if _arena_node != null:
 		var node: Node = _arena_node.get_node_or_null("Players/Player_%d" % id)
 		if node:
