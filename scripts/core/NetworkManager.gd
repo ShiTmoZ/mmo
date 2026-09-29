@@ -2,7 +2,6 @@
 ## Manages ENet peer lifecycle, player spawning via MultiplayerSpawner,
 ## and lobby-to-arena transitions.
 ## Register as AutoLoad name "NetworkManager" in project settings.
-class_name NetworkManager
 extends Node
 
 # ---------------------------------------------------------------------------
@@ -83,9 +82,6 @@ func get_all_player_ids() -> Array:
 func request_start_arena() -> void:
 	if not multiplayer.is_server():
 		return
-	if _player_data.size() < 2:
-		push_warning("NetworkManager: Need at least 2 players to start arena")
-		return
 	_load_arena.rpc()
 
 func get_local_team() -> int:
@@ -156,7 +152,7 @@ func _spawn_player_node(peer_id: int, spawn_pos: Vector3, team: int, display_nam
 	# Notify the owning peer about their player
 	_notify_player_spawned.rpc_id(peer_id, player.get_path(), peer_id, team)
 
-@rpc("authority", "reliable")
+@rpc("authority", "call_local", "reliable")
 func _notify_player_spawned(player_path: NodePath, peer_id: int, team: int) -> void:
 	# Client receives their authoritative player path
 	var player_node: Node = get_node_or_null(player_path)
@@ -196,6 +192,10 @@ func register_player_rpc(display_name: String) -> void:
 	_register_player(peer_id, display_name, team)
 	# Acknowledge back to client
 	_ack_registration.rpc_id(peer_id, peer_id, team)
+	if _arena_node != null:
+		_load_arena.rpc_id(peer_id)
+		var spawn_pos: Vector3 = _get_spawn_position(team, 0)
+		_spawn_player_node(peer_id, spawn_pos, team, display_name)
 
 @rpc("authority", "reliable")
 func _ack_registration(peer_id: int, team: int) -> void:

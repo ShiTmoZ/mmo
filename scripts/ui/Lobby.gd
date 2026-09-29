@@ -22,8 +22,9 @@ func _ready() -> void:
 	NetworkManager.arena_ready.connect(_on_arena_ready)
 
 func _on_host_pressed() -> void:
-	_status_label.text = "Starting server..."
+	_status_label.text = "Starting arena..."
 	NetworkManager.create_server()
+	NetworkManager.request_start_arena()
 
 func _on_join_pressed() -> void:
 	var address: String = _address_field.text.strip_edges()

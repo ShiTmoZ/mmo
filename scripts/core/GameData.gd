@@ -1,7 +1,6 @@
 ## Autoload singleton: scripts/core/GameData.gd
 ## Holds shared enumerations, spell definitions, and global game constants.
-## Must be registered as an AutoLoad in project.godot (name: GameData).
-class_name GameData
+## Registered as an AutoLoad in project.godot (name: GameData).
 extends Node
 
 # ---------------------------------------------------------------------------
@@ -79,7 +78,7 @@ class SpellData:
 # ---------------------------------------------------------------------------
 # Spell library — all spells available to players
 # ---------------------------------------------------------------------------
-const SPELLS: Dictionary = {}
+var SPELLS: Dictionary = {}
 
 func _ready() -> void:
 	_register_spells()
