@@ -89,6 +89,53 @@ func get_player_info(peer_id: int) -> Dictionary:
 func get_all_player_ids() -> Array:
 	return _player_data.keys()
 
+func start_solo_arena() -> void:
+	if multiplayer.has_multiplayer_peer():
+		multiplayer.multiplayer_peer.close()
+		multiplayer.multiplayer_peer = null
+	_player_data.clear()
+	_player_data[1] = {
+		"display_name": "Champion",
+		"team": GameData.Team.TEAM_1,
+	}
+	_load_arena_solo()
+
+func _load_arena_solo() -> void:
+	if _arena_node != null:
+		return
+	var arena_resource: PackedScene = load(arena_scene_path) as PackedScene
+	if arena_resource == null:
+		push_error("NetworkManager: Cannot load arena scene at %s" % arena_scene_path)
+		return
+	_arena_node = arena_resource.instantiate()
+	get_tree().root.add_child(_arena_node)
+
+	arena_ready.emit()
+
+	# Spawn player 1
+	var spawn_pos: Vector3 = GameData.SPAWN_TEAM_1
+	_spawn_player_node(1, spawn_pos, GameData.Team.TEAM_1, "Champion")
+
+	# Spawn training dummy on Team 2
+	var dummy_pos: Vector3 = GameData.SPAWN_TEAM_2
+	_spawn_training_dummy(dummy_pos, GameData.Team.TEAM_2)
+
+func _spawn_training_dummy(spawn_pos: Vector3, dummy_team: int) -> void:
+	if player_scene == null:
+		player_scene = load("res://scenes/player.tscn") as PackedScene
+	var dummy: CharacterBody3D = player_scene.instantiate() as CharacterBody3D
+	dummy.name = "Training_Dummy"
+	dummy.position = spawn_pos
+	dummy.team = dummy_team
+	dummy.display_name = "Training Dummy"
+	dummy.set_meta("peer_id", 999)
+	dummy.set_meta("team", dummy_team)
+	dummy.set_meta("display_name", "Training Dummy")
+	var players_container: Node = _arena_node.get_node_or_null("Players")
+	if players_container == null:
+		players_container = _arena_node
+	players_container.add_child(dummy)
+
 func request_start_arena() -> void:
 	if not multiplayer.is_server():
 		return

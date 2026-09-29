@@ -189,8 +189,8 @@ func server_validate_hit(
 	target_path: NodePath,
 	spell_id: int
 ) -> void:
-	# Only the server runs the validation logic
-	if not multiplayer.is_server():
+	# Only the server runs the validation logic in multiplayer
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
 		return
 
 	var caster: Node = get_node_or_null(caster_path)
@@ -226,8 +226,11 @@ func server_validate_hit(
 			push_warning("CastSystem: Hit rejected — no line-of-sight")
 			return
 
-	# All checks passed — apply hit on all clients
-	apply_hit_rpc.rpc(target_path, spell_id)
+	# All checks passed — apply hit
+	if multiplayer.has_multiplayer_peer():
+		apply_hit_rpc.rpc(target_path, spell_id)
+	else:
+		apply_hit_rpc(target_path, spell_id)
 
 @rpc("authority", "call_local", "reliable")
 func apply_hit_rpc(target_path: NodePath, spell_id: int) -> void:

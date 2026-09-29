@@ -48,37 +48,43 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -150.0
-offset_right = 200.0
-offset_bottom = 200.0
-theme_override_constants/separation = 14
+offset_left = -220.0
+offset_top = -200.0
+offset_right = 220.0
+offset_bottom = 220.0
+theme_override_constants/separation = 12
+
+[node name="SoloButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+text = "⚔ ENTER ARENA (SOLO PRACTICE)"
+theme_override_font_sizes/font_size = 18
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
 
 [node name="AddressField" type="LineEdit" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 40)
 placeholder_text = "Server IP (default: 206.1.97.56)"
 theme_override_font_sizes/font_size = 16
 
-[node name="HostButton" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 48)
-text = "HOST GAME"
+[node name="JoinButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 46)
+text = "JOIN ONLINE SERVER"
 theme_override_font_sizes/font_size = 18
 
-[node name="JoinButton" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 48)
-text = "JOIN GAME"
+[node name="HostButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 46)
+text = "HOST LOCAL GAME"
 theme_override_font_sizes/font_size = 18
 
 [node name="StartButton" type="Button" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 48)
-text = "START ARENA"
+custom_minimum_size = Vector2(0, 46)
+text = "START MULTIPLAYER ARENA"
 theme_override_font_sizes/font_size = 18
-disabled = true
 
 [node name="StatusLabel" type="Label" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 60)
 horizontal_alignment = 1
 autowrap_mode = 2
-text = "Enter server address or host a new game."
+text = "Click ENTER ARENA to test solo, or JOIN ONLINE SERVER to play with friends."
 theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
