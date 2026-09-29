@@ -4,6 +4,8 @@
 class_name CombatHUD
 extends CanvasLayer
 
+const GameData = preload("res://scripts/core/GameData.gd")
+
 # ---------------------------------------------------------------------------
 # Node references — matched to CombatHUD.tscn hierarchy
 # ---------------------------------------------------------------------------
@@ -110,7 +112,7 @@ func _process(delta: float) -> void:
 	# Action bar cooldown overlays
 	_update_action_slot_cooldown(0, _player.spell_slot_1 if "spell_slot_1" in _player else 1)
 	_update_action_slot_cooldown(1, _player.spell_slot_2 if "spell_slot_2" in _player else 2)
-	_update_action_slot_cooldown(2, _player.spell_slot_3 if "spell_slot_3" in _player else 6)
+	_update_action_slot_cooldown(2, _player.spell_slot_3 if "spell_slot_3" in _player else 3)
 
 # ---------------------------------------------------------------------------
 # Public callbacks (called from Player)

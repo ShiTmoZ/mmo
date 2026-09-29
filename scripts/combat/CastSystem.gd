@@ -4,6 +4,7 @@
 class_name CastSystem
 extends Node
 
+const GameData = preload("res://scripts/core/GameData.gd")
 const SpellVFX = preload("res://scripts/combat/SpellVFX.gd")
 
 # ---------------------------------------------------------------------------
@@ -122,6 +123,11 @@ func get_cast_progress() -> float:
 	if not _is_casting or _cast_duration <= 0.0:
 		return 0.0
 	return clampf(_cast_timer / _cast_duration, 0.0, 1.0)
+
+func get_cast_remaining_time() -> float:
+	if not _is_casting or _cast_duration <= 0.0:
+		return 0.0
+	return maxf(_cast_duration - _cast_timer, 0.0)
 
 func get_current_spell_id() -> int:
 	return _current_spell_id
@@ -253,8 +259,8 @@ func _resolve_hit(spell, caster: Node, target: Node) -> void:
 		return
 
 	# Target must not be on same team as caster for damage
-	var caster_team: int = caster.get_meta("team", GameData.Team.NONE)
-	var target_team: int = target.get_meta("team", GameData.Team.NONE)
+	var caster_team: int = caster.team if ("team" in caster) else caster.get_meta("team", GameData.Team.NONE)
+	var target_team: int = target.team if ("team" in target) else target.get_meta("team", GameData.Team.NONE)
 
 	if spell.base_damage > 0.0 and caster_team != target_team:
 		# Check if target is in dodge i-frames

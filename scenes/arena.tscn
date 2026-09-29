@@ -1,27 +1,44 @@
-[gd_scene load_steps=14 format=3 uid="uid://arena_scene"]
+[gd_scene load_steps=23 format=3 uid="uid://arena_scene"]
 
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://assets/models/pillar.glb" id="2_pillar_model"]
 [ext_resource type="PackedScene" path="res://assets/models/torch_lit.glb" id="3_torch_model"]
+[ext_resource type="Shader" path="res://shaders/flagstone.gdshader" id="4_flagstone_shader"]
+[ext_resource type="Shader" path="res://shaders/gothic_stone.gdshader" id="6_gothic_stone_shader"]
 
 [sub_resource type="CylinderShape3D" id="1_floor_shape"]
 radius = 40.0
 height = 1.0
 
-[sub_resource type="StandardMaterial3D" id="2_floor_mat"]
-albedo_color = Color(0.42, 0.42, 0.45, 1)
-roughness = 0.8
-metallic = 0.05
+[sub_resource type="ShaderMaterial" id="2_floor_shader_mat"]
+render_priority = 0
+shader = ExtResource("4_flagstone_shader")
+shader_parameter/stone_color_a = Color(0.38, 0.36, 0.4, 1)
+shader_parameter/stone_color_b = Color(0.26, 0.24, 0.28, 1)
+shader_parameter/crack_color = Color(0.12, 0.11, 0.13, 1)
+shader_parameter/moss_color = Color(0.18, 0.3, 0.18, 1)
+shader_parameter/tile_scale = 16.0
+shader_parameter/roughness_base = 0.75
+shader_parameter/metallic_base = 0.05
+shader_parameter/moss_amount = 0.25
 
 [sub_resource type="CylinderMesh" id="3_floor_mesh"]
 top_radius = 40.0
 bottom_radius = 40.0
 height = 1.0
 
-[sub_resource type="StandardMaterial3D" id="4_wall_mat"]
-albedo_color = Color(0.35, 0.33, 0.32, 1)
-roughness = 0.85
-cull_mode = 2
+[sub_resource type="ShaderMaterial" id="4_wall_stone_mat"]
+render_priority = 0
+shader = ExtResource("6_gothic_stone_shader")
+shader_parameter/stone_color_base = Color(0.28, 0.26, 0.25, 1)
+shader_parameter/stone_color_dark = Color(0.18, 0.16, 0.16, 1)
+shader_parameter/lichen_color = Color(0.18, 0.26, 0.15, 1)
+shader_parameter/rust_color = Color(0.3, 0.16, 0.08, 1)
+shader_parameter/roughness_base = 0.85
+shader_parameter/metallic_base = 0.05
+shader_parameter/lichen_coverage = 0.35
+shader_parameter/rust_coverage = 0.15
+shader_parameter/noise_scale = 8.0
 
 [sub_resource type="CylinderMesh" id="5_wall_mesh"]
 top_radius = 40.5
@@ -34,15 +51,48 @@ height = 8.0
 
 [sub_resource type="Environment" id="6_env"]
 background_mode = 1
-background_color = Color(0.14, 0.16, 0.22, 1)
+background_color = Color(0.08, 0.09, 0.13, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.40, 0.44, 0.52, 1)
-ambient_light_energy = 1.0
+ambient_light_color = Color(0.35, 0.38, 0.45, 1)
+ambient_light_energy = 1.2
 tonemap_mode = 0
 
 [sub_resource type="CameraAttributesPractical" id="7_cam_attrs"]
 
-[sub_resource type="WorldBoundaryShape3D" id="8_void_plane"]
+[sub_resource type="ParticleProcessMaterial" id="EmberMat"]
+emission_shape = 3
+emission_box_extents = Vector3(25, 1, 25)
+direction = Vector3(0.1, 1, 0.05)
+spread = 25.0
+initial_velocity_min = 0.5
+initial_velocity_max = 2.5
+angular_velocity_min = -90.0
+angular_velocity_max = 90.0
+gravity = Vector3(0, -0.05, 0)
+linear_accel_min = -0.2
+linear_accel_max = 0.2
+damping_min = 0.1
+damping_max = 0.4
+scale_min = 0.03
+scale_max = 0.08
+color = Color(1, 0.6, 0.1, 0.9)
+
+[sub_resource type="SphereMesh" id="Mesh_ember"]
+radius = 0.04
+height = 0.08
+
+[sub_resource type="StandardMaterial3D" id="Mat_ember"]
+albedo_color = Color(1, 0.65, 0.15, 1)
+emission_enabled = true
+emission = Color(2, 0.9, 0.1, 1)
+emission_energy_multiplier = 4.0
+transparency = 1
+
+[sub_resource type="BoxMesh" id="Mesh_arch_h"]
+size = Vector3(10.0, 1.2, 1.2)
+
+[sub_resource type="BoxMesh" id="Mesh_arch_v"]
+size = Vector3(1.2, 9.0, 1.2)
 
 [node name="arena" type="Node3D"]
 
@@ -53,7 +103,7 @@ camera_attributes = SubResource("7_cam_attrs")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 25, 0)
 light_color = Color(0.92, 0.95, 1, 1)
-light_energy = 1.8
+light_energy = 1.6
 shadow_enabled = true
 
 [node name="ArenaFloor" type="StaticBody3D" parent="."]
@@ -67,14 +117,88 @@ shape = SubResource("1_floor_shape")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="ArenaFloor"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 mesh = SubResource("3_floor_mesh")
-surface_material_override/0 = SubResource("2_floor_mat")
+surface_material_override/0 = SubResource("2_floor_shader_mat")
 
 [node name="ArenaWall" type="Node3D" parent="."]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="ArenaWall"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 mesh = SubResource("5_wall_mesh")
-surface_material_override/0 = SubResource("4_wall_mat")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="GothicArches" type="Node3D" parent="."]
+
+[node name="Arch_North" type="Node3D" parent="GothicArches"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -28)
+
+[node name="PillarL" type="MeshInstance3D" parent="GothicArches/Arch_North"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 4.5, 0)
+mesh = SubResource("Mesh_arch_v")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="PillarR" type="MeshInstance3D" parent="GothicArches/Arch_North"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 4.5, 0)
+mesh = SubResource("Mesh_arch_v")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="ArchBar" type="MeshInstance3D" parent="GothicArches/Arch_North"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.5, 0)
+mesh = SubResource("Mesh_arch_h")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="Arch_South" type="Node3D" parent="GothicArches"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 28)
+
+[node name="PillarL" type="MeshInstance3D" parent="GothicArches/Arch_South"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 4.5, 0)
+mesh = SubResource("Mesh_arch_v")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="PillarR" type="MeshInstance3D" parent="GothicArches/Arch_South"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 4.5, 0)
+mesh = SubResource("Mesh_arch_v")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="ArchBar" type="MeshInstance3D" parent="GothicArches/Arch_South"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.5, 0)
+mesh = SubResource("Mesh_arch_h")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="Arch_East" type="Node3D" parent="GothicArches"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 28, 0, 0)
+
+[node name="PillarL" type="MeshInstance3D" parent="GothicArches/Arch_East"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 4.5, 0)
+mesh = SubResource("Mesh_arch_v")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="PillarR" type="MeshInstance3D" parent="GothicArches/Arch_East"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 4.5, 0)
+mesh = SubResource("Mesh_arch_v")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="ArchBar" type="MeshInstance3D" parent="GothicArches/Arch_East"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.5, 0)
+mesh = SubResource("Mesh_arch_h")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="Arch_West" type="Node3D" parent="GothicArches"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -28, 0, 0)
+
+[node name="PillarL" type="MeshInstance3D" parent="GothicArches/Arch_West"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 4.5, 0)
+mesh = SubResource("Mesh_arch_v")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="PillarR" type="MeshInstance3D" parent="GothicArches/Arch_West"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 4.5, 0)
+mesh = SubResource("Mesh_arch_v")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
+
+[node name="ArchBar" type="MeshInstance3D" parent="GothicArches/Arch_West"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.5, 0)
+mesh = SubResource("Mesh_arch_h")
+surface_material_override/0 = SubResource("4_wall_stone_mat")
 
 [node name="Pillars" type="Node3D" parent="."]
 
@@ -165,6 +289,14 @@ light_color = Color(1, 0.65, 0.25, 1)
 light_energy = 3.5
 omni_range = 18.0
 shadow_enabled = true
+
+[node name="EmberSystem" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+amount = 180
+lifetime = 6.0
+process_material = SubResource("EmberMat")
+draw_pass_1 = SubResource("Mesh_ember")
+visibility_aabb = AABB(-25, -2, -25, 50, 12, 50)
 
 [node name="Players" type="Node3D" parent="."]
 

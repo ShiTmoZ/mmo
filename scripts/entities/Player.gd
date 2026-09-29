@@ -4,6 +4,8 @@
 class_name Player
 extends CharacterBody3D
 
+const GameData = preload("res://scripts/core/GameData.gd")
+
 # ---------------------------------------------------------------------------
 # MultiplayerSynchronizer properties (declared for sync node to pick up)
 # ---------------------------------------------------------------------------
@@ -31,7 +33,7 @@ var _anim_player: AnimationPlayer = null
 # ---------------------------------------------------------------------------
 @export var spell_slot_1: int = 1   # Fireball
 @export var spell_slot_2: int = 2   # Frost Nova
-@export var spell_slot_3: int = 6   # Counterspell
+@export var spell_slot_3: int = 3   # Arcane Blast (high impact spell)
 
 # ---------------------------------------------------------------------------
 # Vitals
@@ -166,9 +168,14 @@ func init_as_local_player(peer_id: int, team_id: int) -> void:
 			if _hud.has_method("init"):
 				_hud.init(self)
 
-	# Build target list after a frame
+	# Build target list and select target after a frame
 	call_deferred("_refresh_target_list")
+	call_deferred("_auto_select_initial_target")
 	print("Player: Initialized as local player — id=%d team=%d" % [peer_id, team_id])
+
+func _auto_select_initial_target() -> void:
+	if _current_target == null and not _potential_targets.is_empty():
+		_set_target(_potential_targets[0])
 
 # ---------------------------------------------------------------------------
 # Input & physics (local player only)
@@ -185,6 +192,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if mb.pressed else Input.MOUSE_MODE_VISIBLE
 		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
 			_try_click_select_target()
+			_perform_basic_attack()
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
 			if _spring_arm:
 				_spring_arm.spring_length = clampf(_spring_arm.spring_length - 0.5, 2.5, 12.0)
@@ -219,6 +227,9 @@ func _physics_process(delta: float) -> void:
 func _update_animation() -> void:
 	if not _anim_player:
 		return
+	if _anim_player.current_animation in ["1H_Melee_Attack_Chop", "Spellcast_Shoot", "Spellcast_Raise", "Hit_A"]:
+		if _anim_player.is_playing():
+			return
 	match current_state:
 		GameData.PlayerState.IDLE:
 			if _anim_player.current_animation != "Idle":
@@ -238,6 +249,43 @@ func _update_animation() -> void:
 		GameData.PlayerState.DEAD:
 			if _anim_player.current_animation != "Death_A":
 				_anim_player.play("Death_A", 0.1)
+
+func _get_vfx() -> Node:
+	return get_node_or_null("/root/SpellVFX")
+
+func play_hit_reaction() -> void:
+	if _anim_player and current_state != GameData.PlayerState.DEAD:
+		_anim_player.play("Hit_A", 0.05)
+
+func _perform_basic_attack() -> void:
+	if current_state == GameData.PlayerState.DEAD or current_state == GameData.PlayerState.STUNNED or current_state == GameData.PlayerState.DODGE_ROLLING:
+		return
+	if _anim_player:
+		_anim_player.play("1H_Melee_Attack_Chop", 0.05)
+
+	# Find or verify target in melee reach
+	var melee_reach: float = 5.0
+	var target: Node = _current_target
+	if target == null or global_position.distance_to(target.global_position) > melee_reach:
+		_refresh_target_list()
+		for candidate: Node in _potential_targets:
+			if global_position.distance_to(candidate.global_position) <= melee_reach:
+				target = candidate
+				_set_target(candidate)
+				break
+
+	if target != null and global_position.distance_to(target.global_position) <= melee_reach:
+		var is_invul: bool = target.is_invulnerable() if target.has_method("is_invulnerable") else false
+		if not is_invul:
+			var dmg: float = 35.0
+			if target.has_method("receive_damage"):
+				target.receive_damage(dmg)
+			if target.has_method("play_hit_reaction"):
+				target.play_hit_reaction()
+			var vfx: Node = _get_vfx()
+			if vfx != null:
+				vfx.spawn_fct(target.global_position + Vector3(0, 1.8, 0), dmg, false, "arcane")
+				vfx.trigger_screen_shake(0.25, 0.15)
 
 func _setup_knight_weapons(knight_node: Node) -> void:
 	var skel: Node = knight_node.get_node_or_null("Rig/Skeleton3D")
@@ -413,14 +461,20 @@ func _refresh_target_list() -> void:
 	_potential_targets.clear()
 	var arena: Node = get_tree().root.get_node_or_null("arena")
 	if arena == null:
+		var p: Node = get_parent()
+		if p != null and p.name == "Players":
+			arena = p.get_parent()
+		elif p != null:
+			arena = p
+	if arena == null:
 		return
 	var players_root: Node = arena.get_node_or_null("Players")
 	if players_root == null:
-		return
+		players_root = arena
 	for child: Node in players_root.get_children():
-		if child == self:
+		if child == self or not (child is CharacterBody3D or child is Node3D):
 			continue
-		var child_team: int = child.get_meta("team", GameData.Team.NONE)
+		var child_team: int = child.team if ("team" in child) else child.get_meta("team", GameData.Team.NONE)
 		if child_team != team and child_team != GameData.Team.NONE:
 			_potential_targets.append(child)
 
@@ -447,11 +501,11 @@ func _try_click_select_target() -> void:
 	# Walk up to find Player node
 	var node: Node = hit_object as Node
 	while node != null:
-		if node is Player and node != self:
-			var hit_team: int = node.get_meta("team", GameData.Team.NONE)
-			if hit_team != team:
+		if (node is CharacterBody3D or node is Node3D) and node != self:
+			var hit_team: int = node.team if ("team" in node) else node.get_meta("team", GameData.Team.NONE)
+			if hit_team != team and hit_team != GameData.Team.NONE:
 				_set_target(node)
-			break
+				break
 		node = node.get_parent()
 
 func _cycle_target() -> void:
@@ -477,7 +531,7 @@ func get_current_target() -> Node:
 # Casting
 # ---------------------------------------------------------------------------
 func _initiate_cast(spell_id: int) -> void:
-	if current_state == GameData.PlayerState.DEAD:
+	if current_state == GameData.PlayerState.DEAD or current_state == GameData.PlayerState.STUNNED:
 		return
 	if _cast_system.is_on_cooldown(spell_id):
 		return
@@ -486,25 +540,61 @@ func _initiate_cast(spell_id: int) -> void:
 	if spell == null:
 		return
 
-	# For damage spells require a target
+	# For damage spells require a target; auto-target if none
 	if spell.base_damage > 0.0 and _current_target == null:
 		_refresh_target_list()
-		if _potential_targets.is_empty():
-			return
-		_set_target(_potential_targets[0])
+		if not _potential_targets.is_empty():
+			_set_target(_potential_targets[0])
 
 	var target: Node = _current_target if spell.base_damage > 0.0 else null
 
 	if spell.cast_time > 0.0:
 		current_state = GameData.PlayerState.CASTING
-	_cast_system.try_cast(spell_id, self, target)
+		if _anim_player:
+			_anim_player.play("Spellcasting", 0.1)
 
-	# For instant hits immediately request server validation
-	if spell.cast_time <= 0.0 and target != null:
-		if multiplayer.has_multiplayer_peer():
-			_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
-		else:
-			_cast_system.server_validate_hit(get_path(), target.get_path(), spell_id)
+	var cast_started: bool = _cast_system.try_cast(spell_id, self, target)
+	if not cast_started:
+		if current_state == GameData.PlayerState.CASTING:
+			current_state = GameData.PlayerState.IDLE
+		return
+
+	# Instant cast spells
+	if spell.cast_time <= 0.0:
+		_execute_instant_spell(spell_id, target)
+
+func _execute_instant_spell(spell_id: int, target: Node) -> void:
+	if _anim_player:
+		_anim_player.play("Spellcast_Raise", 0.05)
+
+	if spell_id == 2: # Frost Nova
+		var vfx_fn: Node = _get_vfx()
+		if vfx_fn != null and vfx_fn.has_method("frost_nova_expand"):
+			vfx_fn.frost_nova_expand(global_position)
+		if target != null and global_position.distance_to(target.global_position) <= 18.0:
+			if target.has_method("receive_damage"):
+				target.receive_damage(45.0)
+			if target.has_method("play_hit_reaction"):
+				target.play_hit_reaction()
+			if vfx_fn != null and vfx_fn.has_method("spawn_fct"):
+				vfx_fn.spawn_fct(target.global_position + Vector3(0, 1.8, 0), 45.0, false, "frost")
+				vfx_fn.trigger_screen_shake(0.35, 0.2)
+	elif spell_id == 6 or spell_id == 3: # Arcane Blast / Counterspell
+		var hit_pos: Vector3 = target.global_position if target != null else (global_position - transform.basis.z * 10.0)
+		var vfx_arc: Node = _get_vfx()
+		if vfx_arc != null and vfx_arc.has_method("counterspell_crack"):
+			vfx_arc.counterspell_crack(hit_pos)
+		if target != null:
+			if target.has_method("receive_damage"):
+				target.receive_damage(60.0)
+			if target.has_method("play_hit_reaction"):
+				target.play_hit_reaction()
+			if vfx_arc != null and vfx_arc.has_method("spawn_fct"):
+				vfx_arc.spawn_fct(target.global_position + Vector3(0, 1.8, 0), 60.0, false, "arcane")
+				vfx_arc.trigger_screen_shake(0.3, 0.2)
+
+	if target != null and multiplayer.has_multiplayer_peer():
+		_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
 
 func _on_cast_started(spell_id: int, cast_time: float) -> void:
 	current_state = GameData.PlayerState.CASTING
@@ -513,11 +603,41 @@ func _on_cast_started(spell_id: int, cast_time: float) -> void:
 
 func _on_cast_completed(spell_id: int) -> void:
 	current_state = GameData.PlayerState.IDLE
-	if _current_target != null:
-		if multiplayer.has_multiplayer_peer():
-			_cast_system.server_validate_hit.rpc(get_path(), _current_target.get_path(), spell_id)
+	if _anim_player:
+		_anim_player.play("Spellcast_Shoot", 0.05)
+
+	var target: Node = _current_target
+	if spell_id == 1: # Fireball
+		var start_pos: Vector3 = global_position + Vector3(0.0, 1.3, 0.0)
+		var target_pos: Vector3 = target.global_position + Vector3(0.0, 1.0, 0.0) if target != null else (global_position - transform.basis.z * 18.0 + Vector3(0.0, 1.0, 0.0))
+		var vfx: Node = _get_vfx()
+		if vfx != null and vfx.has_method("launch_fireball"):
+			vfx.launch_fireball(start_pos, target_pos, func() -> void:
+				if target != null and is_instance_valid(target):
+					if target.has_method("receive_damage"):
+						target.receive_damage(85.0)
+					if target.has_method("play_hit_reaction"):
+						target.play_hit_reaction()
+					if vfx.has_method("spawn_fct"):
+						vfx.spawn_fct(target.global_position + Vector3(0, 1.8, 0), 85.0, false, "fire")
+					if is_inside_tree() and multiplayer and multiplayer.has_multiplayer_peer():
+						_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
+			)
 		else:
-			_cast_system.server_validate_hit(get_path(), _current_target.get_path(), spell_id)
+			if target != null and is_instance_valid(target):
+				if target.has_method("receive_damage"):
+					target.receive_damage(85.0)
+				if is_inside_tree() and multiplayer and multiplayer.has_multiplayer_peer():
+					_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
+	else:
+		if target != null and is_instance_valid(target):
+			if target.has_method("receive_damage"):
+				target.receive_damage(85.0)
+			if is_inside_tree() and multiplayer and multiplayer.has_multiplayer_peer():
+				_cast_system.server_validate_hit.rpc(get_path(), target.get_path(), spell_id)
+			elif _cast_system:
+				_cast_system.server_validate_hit(get_path(), target.get_path(), spell_id)
+
 	if _hud and _hud.has_method("on_cast_completed"):
 		_hud.on_cast_completed(spell_id)
 

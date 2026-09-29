@@ -76,18 +76,23 @@ class SpellData:
 		projectile_speed  = p_projectile_speed
 
 # ---------------------------------------------------------------------------
-# Spell library — all spells available to players
+# Spell registry
 # ---------------------------------------------------------------------------
-var SPELLS: Dictionary = {}
+static var SPELLS: Dictionary = {}
+
+static func _static_init() -> void:
+	_register_spells()
 
 func _ready() -> void:
 	_register_spells()
 
-func _register_spells() -> void:
+static func _register_spells() -> void:
+	if not SPELLS.is_empty():
+		return
 	var spell_list: Array[SpellData] = [
-		SpellData.new(1,  "Fireball",          SpellSchool.FIRE,    1.8,  3.0,  30.0, 85.0,  0.0, 30.0, false, 15.0, 18.0),
-		SpellData.new(2,  "Frost Nova",         SpellSchool.FROST,   0.0,  12.0, 25.0, 45.0,  0.0, 12.0, true,  30.0, 0.0),
-		SpellData.new(3,  "Arcane Blast",       SpellSchool.ARCANE,  2.5,  4.0,  40.0, 120.0, 0.0, 35.0, false, 10.0, 22.0),
+		SpellData.new(1,  "Fireball",          SpellSchool.FIRE,    1.0,  1.5,  25.0, 85.0,  0.0, 35.0, false, 15.0, 25.0),
+		SpellData.new(2,  "Frost Nova",         SpellSchool.FROST,   0.0,  6.0,  20.0, 45.0,  0.0, 18.0, true,  30.0, 0.0),
+		SpellData.new(3,  "Arcane Blast",       SpellSchool.ARCANE,  1.2,  2.5,  35.0, 110.0, 0.0, 35.0, false, 10.0, 25.0),
 		SpellData.new(4,  "Shadow Bolt",        SpellSchool.SHADOW,  2.0,  3.5,  35.0, 95.0,  0.0, 30.0, false, 20.0, 15.0),
 		SpellData.new(5,  "Flash Heal",         SpellSchool.HOLY,    1.5,  5.0,  50.0, 0.0,  120.0, 25.0, false, 0.0, 0.0),
 		SpellData.new(6,  "Counterspell",       SpellSchool.ARCANE,  0.0,  24.0, 20.0, 0.0,   0.0, 30.0, true,  0.0, 0.0),
@@ -99,7 +104,9 @@ func _register_spells() -> void:
 	for s: SpellData in spell_list:
 		SPELLS[s.id] = s
 
-func get_spell(spell_id: int) -> SpellData:
+static func get_spell(spell_id: int) -> SpellData:
+	if SPELLS.is_empty():
+		_register_spells()
 	if SPELLS.has(spell_id):
 		return SPELLS[spell_id] as SpellData
 	return null
