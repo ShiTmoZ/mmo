@@ -127,6 +127,7 @@ func _spawn_training_dummy(spawn_pos: Vector3, dummy_team: int) -> void:
 	var dummy: CharacterBody3D = player_scene.instantiate() as CharacterBody3D
 	dummy.name = "Training_Dummy"
 	dummy.position = spawn_pos
+	dummy.rotation.y = PI / 2.0
 	dummy.team = dummy_team
 	dummy.display_name = "Training Dummy"
 	dummy.set_meta("peer_id", 999)
@@ -213,6 +214,10 @@ func _spawn_player_node(peer_id: int, spawn_pos: Vector3, team: int, display_nam
 	player.set_meta("team",         team)
 	player.set_meta("display_name", display_name)
 	player.position = spawn_pos
+	if team == GameData.Team.TEAM_1:
+		player.rotation.y = -PI / 2.0
+	else:
+		player.rotation.y = PI / 2.0
 	if "team" in player:
 		player.team = team
 	if "display_name" in player:

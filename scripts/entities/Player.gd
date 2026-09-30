@@ -154,6 +154,7 @@ func init_as_local_player(peer_id: int, team_id: int) -> void:
 	if _camera_pivot:
 		_camera_pivot.top_level = true
 		_camera_pivot.global_position = global_position + Vector3(0.0, 1.7, 0.0)
+		_camera_yaw = rotation.y
 		_camera_pivot.rotation = Vector3(_camera_pitch, _camera_yaw, 0.0)
 
 	if _camera:
